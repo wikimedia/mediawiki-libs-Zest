@@ -1,15 +1,27 @@
-Composer Library Template
+zest.php
 =========================
 
-If you are trying to create a new PHP Composer library, whether it will be going to submitted to packagist.org or just in your Github account, this template of files will surely help you make the process a lot easier and faster.
+This is a port to PHP of the [zest.js](https://github.com/chjj/zest)
+selector library.  Since that project hasn't been updated in a while,
+bugfixes have been taken from the copy of zest included in the
+[domino](https://github.com/fgnass/domino/pulls) DOM library.
 
-Features
---------
+Usage
+-----
 
-* PSR-4 autoloading compliant structure
-* Unit-Testing with PHPUnit
-* Comprehensive Guides and tutorial
-* Easy to use to any framework or even a plain php file
+API
+---
 
+Tests
+-----
 
-I encourage that you put more information on this readme file instead of leaving it as is. See [http://www.darwinbiler.com/designing-and-making-the-readme-file-for-your-github-repository/](How to make a README file) for more info.
+License and Credits
+-----------------
+The original zest codebase is
+(c) Copyright 2011-2012, Christopher Jeffrey.
+
+The port to PHP is
+(c) Copyright 2019, C. Scott Ananian.
+
+Both the original zest codebase and this port are distributed under
+the MIT license; see LICENSE for more info.

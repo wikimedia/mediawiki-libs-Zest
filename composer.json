@@ -1,24 +1,46 @@
 {
-    "name": "buonzz/composer-library-template",
-    "description": "Boilerplate package for creating other packages.",
-    "keywords": ["template", "composer", "package"],
-    "license": "DBAD",
-    "authors": [
-        {
-            "name": "Darwin Biler",
-            "email": "buonzz@gmail.com"
-        }
-    ],
-    "type": "project",
-    "require": {
-		"php": ">=5.4"
-    },
+	"name": "wikimedia/zest.php",
+	"description": "Fast, lightweight, extensible CSS selector engine for PHP.",
+	"keywords": ["css", "selector", "engine"],
+	"license": "MIT",
+	"homepage": "https://github.com/wikimedia/zest.php",
+	"authors": [
+		{
+			"name": "Christopher Jeffrey"
+		},
+		{
+			"name": "C. Scott Ananian",
+			"email": "cananian@wikimedia.org"
+		}
+	],
+	"require": {
+		"php": ">=7.0.0"
+	},
 	"require-dev": {
-		"phpunit/phpunit": "5.2.*"
-    },
+		"jakub-onderka/php-parallel-lint": "1.0.0",
+		"jakub-onderka/php-console-highlighter": "0.3.2",
+		"mediawiki/mediawiki-codesniffer": "24.0.0",
+		"mediawiki/minus-x": "0.3.1",
+		"ockcyp/covers-validator": "0.5.1 || 0.6.1",
+		"phpunit/phpunit": "^6.5"
+	},
 	"autoload": {
-        "psr-4": {
-            "Buonzz\\Template\\": "src/"
-        }
-    }
+		"psr-4": {
+			"Wikimedia\\Zest\\": "src/"
+		}
+	},
+	"scripts": {
+		"test": [
+			"parallel-lint . --exclude vendor",
+			"phpunit",
+			"covers-validator",
+			"phpcs -sp",
+			"minus-x check ."
+		],
+		"cover": "phpunit --coverage-html coverage",
+		"fix": [
+			"minus-x fix .",
+			"phpcbf"
+		]
+	}
 }
