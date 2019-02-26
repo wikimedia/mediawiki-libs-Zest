@@ -64,6 +64,14 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return $el;
 	}
 
+	private static function parentIsElement( DOMNode $n ): bool {
+		if ( !$n->parentNode ) { return false;
+  }
+		$nodeType = $n->parentNode->nodeType;
+		// The root `html` element can be a first- or last-child, too.
+		return $nodeType === 1 || $nodeType === 9;
+	}
+
 	private static function unquote( string $str ): string {
 		if ( !$str ) {
 			return $str;
@@ -158,13 +166,13 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	}
 
 	private static function nth( string $param, callable $test, bool $last ): callable {
-		$param = $parseNth( $param );
+		$param = self::parseNth( $param );
 		$group = $param->group;
 		$offset = $param->offset;
-		$find = ( !$last ) ? self::child : self::lastChild;
-		$advance = ( !$last ) ? self::next : self::prev;
+		$find = ( !$last ) ? [ self::class, 'child' ] : [ self::class, 'lastChild' ];
+		$advance = ( !$last ) ? [ self::class, 'next' ] : [ self::class, 'prev' ];
 		return function ( DOMNode $el ) use ( $find, $test, $offset, $group, $advance ): bool {
-			if ( $el->parentNode->nodeType !== 1 ) {
+			if ( !self::parentIsElement( $el ) ) {
 				return false;
 			}
 
@@ -207,7 +215,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			},
 			'attr' => function ( string $key, string $op, string $val, bool $i ): callable {
 				$op = self::$operators[ $op ];
-				return function ( DOMNode $el ) use ( $key, $i, $op ): bool {
+				return function ( DOMNode $el ) use ( $key, $i, $op, $val ): bool {
 					/* XXX: the below all assumes a more complete PHP DOM than we have
 					switch ( $key ) {
 					#case 'for':
@@ -277,14 +285,14 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				};
 			},
 			':first-child' => function ( DOMNode $el ): bool {
-				return !self::prev( $el ) && $el->parentNode->nodeType === 1;
+				return !self::prev( $el ) && self::parentIsElement( $el );
 			},
 			':last-child' => function ( DOMNode $el ): bool {
-				return !self::next( $el ) && $el->parentNode->nodeType === 1;
+				return !self::next( $el ) && self::parentIsElement( $el );
 			},
 			':only-child' => function ( DOMNode $el ): bool {
 				return !self::prev( $el ) && !self::next( $el )
-				&& $el->parentNode->nodeType === 1;
+				&& self::parentIsElement( $el );
 			},
 			':nth-child' => function ( string $param, $last = false ): callable {
 				return self::nth( $param, function () {
@@ -307,7 +315,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				};
 			},
 			':first-of-type' => function ( DOMNode $el ): bool {
-				if ( $el->parentNode->nodeType !== 1 ) {
+				if ( !self::parentIsElement( $el ) ) {
 					return false;
 				}
 				$type = $el->nodeName;
@@ -319,7 +327,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return true;
 			},
 			':last-of-type' => function ( DOMNode $el ): bool {
-				if ( $el->parentNode->nodeType !== 1 ) {
+				if ( !self::parentIsElement( $el ) ) {
 					return false;
 				}
 				$type = $el->nodeName;
@@ -840,12 +848,12 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		// attr op
 		// attr value
 		if ( $cap[ 4 ] ) {
-			$value = $cap[ 6 ];
+			$value = $cap[ 6 ] ?? '';
 			$i = preg_match( "/[\"'\\s]\\s*I\$/", $value );
 			if ( $i ) {
 				$value = preg_replace( '/\s*I$/i', '', $value, 1 );
 			}
-			return call_user_func( self::$selectors['attr'], self::decodeid( $cap[ 4 ] ), $cap[ 5 ] || '-', self::unquote( $value ), (bool)$i );
+			return call_user_func( self::$selectors['attr'], self::decodeid( $cap[ 4 ] ), $cap[ 5 ] ?? '-', self::unquote( $value ), (bool)$i );
 		}
 
 		throw new InvalidArgumentException( 'Unknown Selector.' );
