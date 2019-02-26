@@ -14,7 +14,9 @@
 		}
 	],
 	"require": {
-		"php": ">=7.1.0"
+		"php": ">=7.1.0",
+		"ext-intl": "*",
+		"ext-xml": "*"
 	},
 	"require-dev": {
 		"jakub-onderka/php-parallel-lint": "1.0.0",

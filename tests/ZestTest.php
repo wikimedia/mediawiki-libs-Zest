@@ -118,6 +118,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ 'header:contains("A Date")', [ '/html[1]/body[1]/article[1]/header[1]' ] ],
 			// The :has selector
 			[ 'li:has(a[rel=section].foo)', [ '/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]', '/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]' ] ],
+			// CSS escapes
+			[ "#cite_note-13\\.3F_It_Can\\'t_Be\\!-3", [ '/html[1]/body[1]/footer[1]/a[2]' ] ],
+			[ '#\\a9', [ '/html[1]/body[1]/footer[1]/small[1]/a[1]' ] ],
 		];
 	}
 

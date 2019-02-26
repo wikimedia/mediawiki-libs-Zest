@@ -94,7 +94,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return ''; /* escaped newlines are ignored in strings. */
 				}
 				$cp = intval( $m[ 1 ], 16 );
-				return IntlChar::chr( $cp );
+				return \IntlChar::chr( $cp );
 			}, $str );
 		} elseif ( preg_match( self::$rules->ident, $str ) ) {
 			return self::decodeid( $str );
@@ -111,7 +111,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return $s[ 1 ];
 			}
 			$cp = intval( $m[ 1 ], 16 );
-			return IntlChar::chr( $cp );
+			return \IntlChar::chr( $cp );
 		}, $str );
 	}
 
@@ -201,8 +201,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private static $selectors;
 
 	private static function initSelectors() {
-		if ( isset( self::$selectors ) ) { return;
-  }
+		if ( isset( self::$selectors ) ) {
+			return;
+		}
 		self::$selectors = [
 			'*' => function ( DOMNode $el ): bool {
 				return true;
@@ -538,8 +539,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private static $operators;
 
 	private static function initOperators() {
-		if ( isset( self::$operators ) ) { return;
-  }
+		if ( isset( self::$operators ) ) {
+			return;
+		}
 		self::$operators = [
 			'-' => function ( string $attr, string $val ): bool {
 				return true;
@@ -696,7 +698,13 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 * Grammar
 	 */
 
-	private static $rules = [
+	private static $rules;
+
+	public static function initRules() {
+		if ( isset( self::$rules ) ) {
+			return;
+		}
+		self::$rules = (object)[
 		'escape' => '/\\\(?:[^0-9A-Fa-f\r\n]|[0-9A-Fa-f]{1,6}[\r\n\t ]?)/',
 		'str_escape' => '/(escape)|\\\(\n|\r\n?|\f)/',
 		'nonascii' => '/[\x{00A0}-\x{FFFF}]/',
@@ -709,12 +717,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		'pseudo' => '/^(:cssid)(?:\((inside)\))?/',
 		'inside' => "/(?:\"(?:\\\\\"|[^\"])*\"|'(?:\\\\'|[^'])*'|<[^\"'>]*>|\\\\[\"'>]|[^\"'>])*/",
 		'ident' => '/^(cssid)$/',
-	];
-
-	public static function initRules() {
-		if ( is_object( self::$rules ) ) { return;
-  }
-		self::$rules = (object)self::$rules;
+		];
 		self::$rules->cssid = self::replace( self::$rules->cssid, 'nonascii', self::$rules->nonascii );
 		self::$rules->cssid = self::replace( self::$rules->cssid, 'escape', self::$rules->escape );
 		self::$rules->qname = self::replace( self::$rules->qname, 'cssid', self::$rules->cssid );
