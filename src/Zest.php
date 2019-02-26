@@ -2,7 +2,11 @@
 
 namespace Wikimedia\Zest;
 
+use \DOMDocument as DOMDocument;
+use \DOMElement as DOMElement;
 use \DOMNode as DOMNode;
+
+use \Error as Error;
 use \InvalidArgumentException as InvalidArgumentException;
 
 /**
@@ -197,6 +201,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 	/**
 	 * Simple Selectors
+	 * @var array<string,((callable(string):(callable(DOMNode):bool))|(callable(DOMNode):bool))>
 	 */
 	private static $selectors;
 
@@ -214,77 +219,6 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return strtolower( $el->nodeName ) === $type;
 				};
 			},
-			'attr' => function ( string $key, string $op, string $val, bool $i ): callable {
-				$op = self::$operators[ $op ];
-				return function ( DOMNode $el ) use ( $key, $i, $op, $val ): bool {
-					/* XXX: the below all assumes a more complete PHP DOM than we have
-					switch ( $key ) {
-					#case 'for':
-					#	$attr = $el->htmlFor; // Not supported in PHP DOM
-					#	break;
-					case 'class':
-						// PHP DOM doesn't support $el->className
-						// className is '' when non-existent
-						// getAttribute('class') is null
-						if ($el->hasAttributes() && $el->hasAttribute( 'class' ) ) {
-							$attr = $el->getAttribute( 'class' );
-						} else {
-							$attr = null;
-						}
-						break;
-					case 'href':
-					case 'src':
-						$attr = $el->getAttribute( $key, 2 );
-						break;
-					case 'title':
-						// getAttribute('title') can be '' when non-existent sometimes?
-						if ($el->hasAttribute('title')) {
-							$attr = $el->getAttribute( 'title' );
-						} else {
-							$attr = null;
-						}
-						break;
-					// careful with attributes with special getter functions
-					case 'id':
-					case 'lang':
-					case 'dir':
-					case 'accessKey':
-					case 'hidden':
-					case 'tabIndex':
-					case 'style':
-						if ( $el->getAttribute ) {
-							$attr = $el->getAttribute( $key );
-							break;
-						}
-					// falls through
-					default:
-						if ( $el->hasAttribute && !$el->hasAttribute( $key ) ) {
-							break;
-						}
-						$attr = ( $el[ $key ] != null ) ?
-							$el[ $key ] :
-							$el->getAttribute && $el->getAttribute( $key );
-						break;
-					}
-					*/
-					// This is our simple PHP DOM version
-					if ( $el->hasAttributes() && $el->hasAttribute( $key ) ) {
-						$attr = $el->getAttribute( $key );
-					} else {
-						$attr = null;
-					}
-					// End simple PHP DOM version
-					if ( $attr == null ) {
-						return false;
-					}
-					$attr = $attr . '';
-					if ( $i ) {
-						$attr = strtolower( $attr );
-						$val = strtolower( $val );
-					}
-					return call_user_func( $op, $attr, $val );
-				};
-			},
 			':first-child' => function ( DOMNode $el ): bool {
 				return !self::prev( $el ) && self::parentIsElement( $el );
 			},
@@ -300,6 +234,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return true;
 				}, $last );
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':nth-last-child' => function ( string $param ): callable {
 				return self::$selectors[ ':nth-child' ]( $param, true );
 			},
@@ -339,6 +274,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				}
 				return true;
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':only-of-type' => function ( DOMNode $el ): bool {
 				return self::$selectors[ ':first-of-type' ]( $el ) &&
 					self::$selectors[ ':last-of-type' ]( $el );
@@ -348,23 +284,28 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return $rel->nodeName === $el->nodeName;
 				}, $last );
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':nth-last-of-type' => function ( string $param ): callable {
 				return self::$selectors[ ':nth-of-type' ]( $param, true );
 			},
 			':checked' => function ( DOMNode $el ): bool {
+				'@phan-var DOMElement $el';
 				// XXX these properties don't exist in the PHP DOM
 				// return !!( $el->checked || $el->selected );
 				return (bool)( $el->hasAttribute( 'checked' ) || $el->hasAttribute( 'selected' ) );
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':indeterminate' => function ( DOMNode $el ): bool {
 				return !self::$selectors[ ':checked' ]( $el );
 			},
 			':enabled' => function ( DOMNode $el ): bool {
+				'@phan-var DOMElement $el';
 				// XXX these properties don't exist in the PHP DOM
 				// return !$el->disabled && $el->type !== 'hidden';
 				return !$el->hasAttribute( 'disabled' ) && $el->getAttribute( 'type' ) !== 'hidden';
 			},
 			':disabled' => function ( DOMNode $el ): bool {
+				'@phan-var DOMElement $el';
 				// XXX these properties don't exist in the PHP DOM
 				// return !!$el->disabled;
 				return $el->hasAttribute( 'disabled' );
@@ -382,6 +323,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			},
 			// :matches is an older name for :is; see
 			// https://github.com/w3c/csswg-drafts/issues/3258
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':matches' => function ( string $sel ): callable {
 				return self::$selectors[ ':is' ]( $sel );
 			},
@@ -392,6 +334,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 				return self::nth( $arg, $test, $last );
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':nth-last-match' => function ( string $param ): callable {
 				return self::$selectors[ ':nth-match' ]( $param, true );
 			},
@@ -402,6 +345,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			*/
 			':lang' => function ( string $param ): callable {
 				return function ( DOMNode $el ) use ( $param ): bool {
+					'@phan-var DOMElement $el';
 					while ( $el ) {
 						// PHP DOM doesn't have 'lang' property
 						$lang = $el->getAttribute( 'lang' );
@@ -415,6 +359,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			},
 			':dir' => function ( string $param ): callable {
 				return function ( DOMNode $el ) use ( $param ): bool {
+					'@phan-var DOMElement $el';
 					while ( $el ) {
 						$dir = $el->getAttribute( 'dir' );
 						if ( $dir ) {
@@ -461,16 +406,20 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 # ':in-range' => function ( $el ) {
 # return $el->value > $el->min && $el->value <= $el->max;
 # },
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':out-of-range' => function ( DOMNode $el ): bool {
 				return !self::$selectors[ ':in-range' ]( $el );
 			},
 			':required' => function ( DOMNode $el ): bool {
+				'@phan-var DOMElement $el';
 				return $el->hasAttribute( 'required' );
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':optional' => function ( DOMNode $el ): bool {
 				return !self::$selectors[ ':required' ]( $el );
 			},
 			':read-only' => function ( DOMNode $el ): bool {
+				'@phan-var DOMElement $el';
 				if ( $el->hasAttribute( 'readOnly' ) ) {
 					return true;
 				}
@@ -482,6 +431,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 				return ( $name || $el->hasAttribute( 'disabled' ) ) && $attr == null;
 			},
+			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
 			':read-write' => function ( DOMNode $el ): bool {
 				return !self::$selectors[ ':read-only' ]( $el );
 			},
@@ -524,6 +474,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			},
 			':has' => function ( string $param ): callable {
 				return function ( DOMNode $el ) use ( $param ): bool {
+					'@phan-var DOMElement $el';
 					return count( self::find( $param, $el ) ) > 0;
 				};
 			}
@@ -533,8 +484,83 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		];
 	}
 
+	/** @return callable(DOMNode):bool */
+	private static function selectorsAttr( string $key, string $op, string $val, bool $i ): callable {
+		$op = self::$operators[ $op ];
+		return function ( DOMNode $el ) use ( $key, $i, $op, $val ): bool {
+			/* XXX: the below all assumes a more complete PHP DOM than we have
+			switch ( $key ) {
+			#case 'for':
+			#	$attr = $el->htmlFor; // Not supported in PHP DOM
+			#	break;
+			case 'class':
+				// PHP DOM doesn't support $el->className
+				// className is '' when non-existent
+				// getAttribute('class') is null
+				if ($el->hasAttributes() && $el->hasAttribute( 'class' ) ) {
+					$attr = $el->getAttribute( 'class' );
+				} else {
+					$attr = null;
+				}
+				break;
+			case 'href':
+			case 'src':
+				$attr = $el->getAttribute( $key, 2 );
+				break;
+			case 'title':
+				// getAttribute('title') can be '' when non-existent sometimes?
+				if ($el->hasAttribute('title')) {
+					$attr = $el->getAttribute( 'title' );
+				} else {
+					$attr = null;
+				}
+				break;
+				// careful with attributes with special getter functions
+			case 'id':
+			case 'lang':
+			case 'dir':
+			case 'accessKey':
+			case 'hidden':
+			case 'tabIndex':
+			case 'style':
+				if ( $el->getAttribute ) {
+					$attr = $el->getAttribute( $key );
+					break;
+				}
+				// falls through
+			default:
+				if ( $el->hasAttribute && !$el->hasAttribute( $key ) ) {
+					break;
+				}
+				$attr = ( $el[ $key ] != null ) ?
+					$el[ $key ] :
+					$el->getAttribute && $el->getAttribute( $key );
+				break;
+			}
+			*/
+			// This is our simple PHP DOM version
+			'@phan-var DOMElement $el';
+			if ( $el->hasAttributes() && $el->hasAttribute( $key ) ) {
+				$attr = $el->getAttribute( $key );
+			} else {
+				$attr = null;
+			}
+			// End simple PHP DOM version
+			if ( $attr == null ) {
+				return false;
+			}
+			$attr = $attr . '';
+			if ( $i ) {
+				$attr = strtolower( $attr );
+				$val = strtolower( $val );
+			}
+			return call_user_func( $op, $attr, $val );
+		};
+	}
+
 	/**
 	 * Attribute Operators
+	 * @var array<string,(callable(string,string):bool)>
 	 */
 	private static $operators;
 
@@ -597,6 +623,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 	/**
 	 * Combinator Logic
+	 * @var array<string,(callable(callable(DOMNode):bool):(callable(DOMNode):?DOMNode))>
 	 */
 	private static $combinators;
 
@@ -654,44 +681,45 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return null;
 				};
 			},
-			'ref' => function ( callable $test, string $name ): ZestFunc {
-				$node = null;
-				$ref = new ZestFunc( function ( DOMNode $el ) use ( &$node, &$ref ) : boolean {
-					$doc = $el->ownerDocument;
-					$nodes = $doc->getElementsByTagName( '*' );
-					$i = count( $nodes );
-
-					while ( $i-- ) {
-						$node = $nodes[ $i ];
-						if ( call_user_func( $ref->test->func, $el ) ) {
-							$node = null;
-							return true;
-						}
-					}
-
-					$node = null;
-					return false;
-				} );
-
-				$ref->combinator = function ( DOMNode $el ) use ( &$node, $name, $test ): ?DOMNode {
-					if ( !$node || !( $node instanceof DOMElement ) ) {
-						return null;
-					}
-
-					$attr = $node->getAttribute( $name ) || '';
-					if ( $attr[ 0 ] === '#' ) {
-						$attr = $attr->substring( 1 );
-					}
-
-					$id = $node->getAttribute( 'id' ) || '';
-					if ( $attr === $el->id && call_user_func( $test, $node ) ) {
-						return $node;
-					}
-				};
-
-				return $ref;
-			},
 		];
+	}
+	private static function makeRef( callable $test, string $name ): ZestFunc {
+		$node = null;
+		$ref = new ZestFunc( function ( DOMNode $el ) use ( &$node, &$ref ) : bool {
+			$doc = $el->ownerDocument;
+			$nodes = $doc->getElementsByTagName( '*' );
+			$i = count( $nodes );
+
+			while ( $i-- ) {
+				$node = $nodes->item( $i );
+				if ( call_user_func( $ref->test->func, $el ) ) {
+					$node = null;
+					return true;
+				}
+			}
+
+			$node = null;
+			return false;
+		} );
+
+		$ref->combinator = function ( DOMNode $el ) use ( &$node, $name, $test ): ?DOMNode {
+			if ( !$node || !( $node instanceof DOMElement ) ) {
+				return null;
+			}
+
+			$attr = $node->getAttribute( $name ) || '';
+			if ( $attr[ 0 ] === '#' ) {
+				$attr = substr( $attr, 1 );
+			}
+
+			$id = $node->getAttribute( 'id' ) || '';
+			if ( $attr === $id && call_user_func( $test, $node ) ) {
+				return $node;
+			}
+			return null;
+		};
+
+		return $ref;
 	}
 
 	/**
@@ -777,7 +805,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 			if ( preg_match( self::$rules->ref, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
-				$ref = self::$combinators['ref']( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
+				$ref = self::makeRef( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
 				$filter[] = $ref->combinator;
 				$buff = [];
 				continue;
@@ -824,28 +852,41 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return $test;
 	}
 
+	/** @return callable(DOMNode):bool */
 	private static function tokQname( string $cap ): callable {
 		// qname
-		return ( $cap === '*' ) ?
-			self::$selectors[ '*' ] :
-			self::$selectors['type']( self::decodeid( $cap ) );
+		if ( $cap === '*' ) {
+			$test = self::$selectors['*'];
+			'@phan-var callable(DOMNode):bool $test';
+			return $test;
+		} else {
+			$test = self::$selectors['type'];
+			'@phan-var callable(string):(callable(DOMNode):bool) $test';
+			return $test( self::decodeid( $cap ) );
+		}
 	}
 
+	/** @return callable(DOMNode):bool */
 	private static function tok( array $cap ): callable {
 		// class/id
 		if ( $cap[ 1 ] ) {
 			return $cap[ 1 ][ 0 ] === '.'
 			// XXX unescape here?  or in attr?
-				? self::$selectors['attr']( 'class', '~=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false ) :
-				self::$selectors['attr']( 'id', '=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false );
+				? self::selectorsAttr( 'class', '~=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false ) :
+				self::selectorsAttr( 'id', '=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false );
 		}
 
 		// pseudo-name
 		// inside-pseudo
 		if ( $cap[ 2 ] ) {
-			return ( isset( $cap[3] ) && $cap[ 3 ] ) ?
-				self::$selectors[ self::decodeid( $cap[ 2 ] ) ]( self::unquote( $cap[ 3 ] ) ) :
-				self::$selectors[ self::decodeid( $cap[ 2 ] ) ];
+			$test = self::$selectors[ self::decodeid( $cap[ 2 ] ) ];
+			if ( isset( $cap[3] ) && $cap[ 3 ] ) {
+				'@phan-var callable(string):(callable(DOMNode):bool) $test';
+				return $test( self::unquote( $cap[ 3 ] ) );
+			} else {
+				'@phan-var callable(DOMNode):bool $test';
+				return $test;
+			}
 		}
 
 		// attr name
@@ -857,7 +898,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			if ( $i ) {
 				$value = preg_replace( '/\s*I$/i', '', $value, 1 );
 			}
-			return self::$selectors['attr']( self::decodeid( $cap[ 4 ] ), $cap[ 5 ] ?? '-', self::unquote( $value ), (bool)$i );
+			return self::selectorsAttr( self::decodeid( $cap[ 4 ] ), $cap[ 5 ] ?? '-', self::unquote( $value ), (bool)$i );
 		}
 
 		throw new InvalidArgumentException( 'Unknown Selector.' );
@@ -913,7 +954,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			$i = count( $scope );
 
 			while ( $i-- ) {
-				if ( preg_match( $subject, $scope[ $i ] ) && $target === $el ) {
+				if ( call_user_func( $subject->test->func, $scope->item( $i ) ) && $target === $el ) {
 					$target = null;
 					return true;
 				}
@@ -931,6 +972,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return $subject;
 	}
 
+	/**
+	 * @return callable(DOMNode):bool
+	 */
 	private static function compileGroup( string $sel ): callable {
 		$test = self::compile( $sel );
 		$tests = [ $test ];
@@ -959,6 +1003,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 */
 
 	// $node should be a DOMDocument or a DOMElement
+	/** @param DOMDocument|DOMElement $node */
 	private static function findInternal( string $sel, DOMNode $node ): array {
 		$results = [];
 		$test = self::compile( $sel );
@@ -991,7 +1036,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	/**
 	 * Find elements matching a CSS selector underneath $context.
 	 * @param string $sel The CSS selector string
-	 * @param DOMNode $context The scope for the search
+	 * @param DOMDocument|DOMElement $context The scope for the search
 	 * @return array Elements matching the CSS selector
 	 */
 	public static function find( string $sel, DOMNode $context ): array {
