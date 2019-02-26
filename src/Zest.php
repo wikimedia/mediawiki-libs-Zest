@@ -300,7 +300,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				}, $last );
 			},
 			':nth-last-child' => function ( string $param ): callable {
-				return call_user_func( self::$selectors[ ':nth-child' ], $param, true );
+				return self::$selectors[ ':nth-child' ]( $param, true );
 			},
 			':root' => function ( DOMNode $el ): bool {
 				return $el->ownerDocument->documentElement === $el;
@@ -339,8 +339,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return true;
 			},
 			':only-of-type' => function ( DOMNode $el ): bool {
-				return call_user_func( self::$selectors[ ':first-of-type' ], $el ) &&
-				call_user_func( self::$selectors[ ':last-of-type' ], $el );
+				return self::$selectors[ ':first-of-type' ]( $el ) &&
+					self::$selectors[ ':last-of-type' ]( $el );
 			},
 			':nth-of-type' => function ( string $param, bool $last = false ): callable  {
 				return self::nth( $param, function ( DOMNode $rel, DOMNode $el ) {
@@ -424,13 +424,13 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return false;
 				};
 			},
-# ':scope' => function ( $el, $con ) {
-# $context = $con || $el->ownerDocument;
-# if ( $context->nodeType === 9 ) {
-# return $el === $context->documentElement;
-# }
-# return $el === $context;
-# },
+			':scope' => function ( DOMNode $el, $con = null ): bool {
+				$context = $con ?? $el->ownerDocument;
+				if ( $context->nodeType === 9 ) {
+					return $el === $context->documentElement;
+				}
+				return $el === $context;
+			},
 # ':any-link' => function ( $el ) {
 # return gettype( $el->href ) === 'string';
 # },
@@ -454,77 +454,78 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 # ':valid' => function ( $el ) {
 # return $el->willValidate || ( $el->validity && $el->validity->valid );
 # },
-# ':invalid' => function ( $el ) use ( &$selectors ) {
-# return !$selectors[ ':valid' ]( $el );
-# },
+			':invalid' => function ( $el ) use ( &$selectors ) {
+				return !self::$selectors[ ':valid' ]( $el );
+			},
 # ':in-range' => function ( $el ) {
 # return $el->value > $el->min && $el->value <= $el->max;
 # },
-# ':out-of-range' => function ( $el ) use ( &$selectors ) {
-# return !$selectors[ ':in-range' ]( $el );
-# },
-# ':required' => function ( $el ) {
-# return !!$el->required;
-# },
-# ':optional' => function ( $el ) {
-# return !$el->required;
-# },
-# ':read-only' => function ( $el ) {
-# if ( $el->readOnly ) { return true;  }
-#
-# $attr = $el->getAttribute( 'contenteditable' );
-# $prop = $el->contentEditable;
-# $name = strtolower( $el->nodeName );
-#
-# $name = $name !== 'input' && $name !== 'textarea';
-#
-# return ( $name || $el->disabled ) && $attr == null && $prop !== 'true';
-# },
-# ':read-write' => function ( $el ) use ( &$selectors ) {
-# return !$selectors[ ':read-only' ]( $el );
-# },
-# ':hover' => function () {
-# throw new Error( ':hover is not supported.' );
-# },
-# ':active' => function () {
-# throw new Error( ':active is not supported.' );
-# },
-# ':link' => function () {
-# throw new Error( ':link is not supported.' );
-# },
-# ':visited' => function () {
-# throw new Error( ':visited is not supported.' );
-# },
-# ':column' => function () {
-# throw new Error( ':column is not supported.' );
-# },
-# ':nth-column' => function () {
-# throw new Error( ':nth-column is not supported.' );
-# },
-# ':nth-last-column' => function () {
-# throw new Error( ':nth-last-column is not supported.' );
-# },
-# ':current' => function () {
-# throw new Error( ':current is not supported.' );
-# },
-# ':past' => function () {
-# throw new Error( ':past is not supported.' );
-# },
-# ':future' => function () {
-# throw new Error( ':future is not supported.' );
-# },
-# // Non-standard, for compatibility purposes.
-# ':contains' => function ( $param ) {
-# return function ( $el ) {
-# $text = $el->innerText || $el->textContent || $el->value || '';
-# return array_search( $param, $text ) !== -1;
-# };
-# },
-# ':has' => function ( $param ) {
-# return function ( $el ) {
-# return count( find( $param, $el ) ) > 0;
-# };
-# }
+			':out-of-range' => function ( DOMNode $el ): bool {
+				return !self::$selectors[ ':in-range' ]( $el );
+			},
+			':required' => function ( DOMNode $el ): bool {
+				return $el->hasAttribute( 'required' );
+			},
+			':optional' => function ( DOMNode $el ): bool {
+				return !self::$selectors[ ':required' ]( $el );
+			},
+			':read-only' => function ( DOMNode $el ): bool {
+				if ( $el->hasAttribute( 'readOnly' ) ) {
+					return true;
+				}
+
+				$attr = $el->getAttribute( 'contenteditable' );
+				$name = strtolower( $el->nodeName );
+
+				$name = $name !== 'input' && $name !== 'textarea';
+
+				return ( $name || $el->hasAttribute( 'disabled' ) ) && $attr == null;
+			},
+			':read-write' => function ( DOMNode $el ): bool {
+				return !self::$selectors[ ':read-only' ]( $el );
+			},
+			':hover' => function ( DOMNode $el ): bool {
+				throw new Error( ':hover is not supported.' );
+			},
+			':active' => function ( DOMNode $el ): bool {
+			throw new Error( ':active is not supported.' );
+			},
+			':link' => function ( DOMNode $el ): bool {
+				throw new Error( ':link is not supported.' );
+			},
+			':visited' => function ( DOMNode $el ): bool {
+			throw new Error( ':visited is not supported.' );
+			},
+			':column' => function ( DOMNode $el ): bool {
+				throw new Error( ':column is not supported.' );
+			},
+			':nth-column' => function ( DOMNode $el ): bool {
+			throw new Error( ':nth-column is not supported.' );
+			},
+			':nth-last-column' => function ( DOMNode $el ): bool {
+				throw new Error( ':nth-last-column is not supported.' );
+			},
+			':current' => function ( DOMNode $el ): bool {
+			throw new Error( ':current is not supported.' );
+			},
+			':past' => function ( DOMNode $el ): bool {
+				throw new Error( ':past is not supported.' );
+			},
+			':future' => function ( DOMNode $el ): bool {
+			throw new Error( ':future is not supported.' );
+			},
+			// Non-standard, for compatibility purposes.
+			':contains' => function ( string $param ): callable {
+				return function ( DOMNode $el ) use ( $param ): bool {
+					$text = $el->textContent;
+					return strpos( $text, $param ) !== false;
+				};
+			},
+			':has' => function ( string $param ): callable {
+				return function ( DOMNode $el ) use ( $param ): bool {
+					return count( self::find( $param, $el ) ) > 0;
+				};
+			}
 			// Potentially add more pseudo selectors for
 			// compatibility with sizzle and most other
 			// selector engines (?).
@@ -773,7 +774,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 			if ( preg_match( self::$rules->ref, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
-				$ref = call_user_func( self::$combinators['ref'], self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
+				$ref = self::$combinators['ref']( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
 				$filter[] = $ref->combinator;
 				$buff = [];
 				continue;
@@ -783,7 +784,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$op = $cap[ 1 ] ?? $cap[ 2 ] ?? $cap[ 3 ];
 				if ( $op === ',' ) {
-					$filter[] = call_user_func( self::$combinators['noop'], self::makeSimple( $buff ) );
+					$filter[] = self::$combinators['noop']( self::makeSimple( $buff ) );
 					break;
 				}
 			} else {
@@ -793,7 +794,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			if ( !isset( self::$combinators[ $op ] ) ) {
 				throw new InvalidArgumentException( 'Bad combinator: ' . $op );
 			}
-			$filter[] = call_user_func( self::$combinators[ $op ], self::makeSimple( $buff ) );
+			$filter[] = self::$combinators[ $op ]( self::makeSimple( $buff ) );
 			$buff = [];
 		}
 
@@ -824,7 +825,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		// qname
 		return ( $cap === '*' ) ?
 			self::$selectors[ '*' ] :
-			call_user_func( self::$selectors['type'], self::decodeid( $cap ) );
+			self::$selectors['type']( self::decodeid( $cap ) );
 	}
 
 	private static function tok( array $cap ): callable {
@@ -832,15 +833,15 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		if ( $cap[ 1 ] ) {
 			return $cap[ 1 ][ 0 ] === '.'
 			// XXX unescape here?  or in attr?
-				? call_user_func( self::$selectors['attr'], 'class', '~=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false ) :
-				call_user_func( self::$selectors['attr'], 'id', '=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false );
+				? self::$selectors['attr']( 'class', '~=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false ) :
+				self::$selectors['attr']( 'id', '=', self::decodeid( substr( $cap[ 1 ], 1 ) ), false );
 		}
 
 		// pseudo-name
 		// inside-pseudo
 		if ( $cap[ 2 ] ) {
 			return ( isset( $cap[3] ) && $cap[ 3 ] ) ?
-				call_user_func( self::$selectors[ self::decodeid( $cap[ 2 ] ) ], self::unquote( $cap[ 3 ] ) ) :
+				self::$selectors[ self::decodeid( $cap[ 2 ] ) ]( self::unquote( $cap[ 3 ] ) ) :
 				self::$selectors[ self::decodeid( $cap[ 2 ] ) ];
 		}
 
@@ -853,7 +854,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			if ( $i ) {
 				$value = preg_replace( '/\s*I$/i', '', $value, 1 );
 			}
-			return call_user_func( self::$selectors['attr'], self::decodeid( $cap[ 4 ] ), $cap[ 5 ] ?? '-', self::unquote( $value ), (bool)$i );
+			return self::$selectors['attr']( self::decodeid( $cap[ 4 ] ), $cap[ 5 ] ?? '-', self::unquote( $value ), (bool)$i );
 		}
 
 		throw new InvalidArgumentException( 'Unknown Selector.' );
