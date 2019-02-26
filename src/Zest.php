@@ -3,6 +3,7 @@
 namespace Wikimedia\Zest;
 
 use \DOMNode as DOMNode;
+use \InvalidArgumentException as InvalidArgumentException;
 
 /**
  * Zest.php (https://github.com/wikimedia/zest.php)
@@ -740,22 +741,22 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			if ( preg_match( self::$rules->qname, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = $cap[ 1 ];
-				$buff[] = tokQname( $qname );
-			} elseif ( preg_match( self::$rules->simple, $sel, $cap ) ) {
+				$buff[] = self::tokQname( $qname );
+			} elseif ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = '*';
-				$buff[] = tokQname( $qname );
-				$buff[] = tok( $cap );
+				$buff[] = self::tokQname( $qname );
+				$buff[] = self::tok( $cap );
 			} else {
-				throw new SyntaxError( 'Invalid selector.' );
+				throw new InvalidArgumentException( 'Invalid selector.' );
 			}
 
-			while ( preg_match( self::$rules->simple, $sel, $cap ) ) {
+			while ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
-				$buff[] = tok( $cap );
+				$buff[] = self::tok( $cap );
 			}
 
-			if ( $sel[ 0 ] === '!' ) {
+			if ( $sel && $sel[ 0 ] === '!' ) {
 				$sel = substr( $sel, 1 );
 				$subject = self::makeSubject();
 				$subject->qname = $qname;
@@ -770,9 +771,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				continue;
 			}
 
-			if ( preg_match( self::$rules->combinator, $sel, $cap ) ) {
+			if ( preg_match( self::$rules->combinator, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
-				$op = $cap[ 1 ] || $cap[ 2 ] || $cap[ 3 ];
+				$op = $cap[ 1 ] ?? $cap[ 2 ] ?? $cap[ 3 ];
 				if ( $op === ',' ) {
 					$filter[] = call_user_func( self::$combinators['noop'], self::makeSimple( $buff ) );
 					break;
@@ -782,7 +783,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			}
 
 			if ( !isset( self::$combinators[ $op ] ) ) {
-				throw new SyntaxError( 'Bad combinator.' );
+				throw new InvalidArgumentException( 'Bad combinator: ' . $op );
 			}
 			$filter[] = call_user_func( self::$combinators[ $op ], self::makeSimple( $buff ) );
 			$buff = [];
@@ -830,7 +831,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		// pseudo-name
 		// inside-pseudo
 		if ( $cap[ 2 ] ) {
-			return ( $cap[ 3 ] ) ?
+			return ( isset( $cap[3] ) && $cap[ 3 ] ) ?
 				call_user_func( self::$selectors[ self::decodeid( $cap[ 2 ] ) ], self::unquote( $cap[ 3 ] ) ) :
 				self::$selectors[ self::decodeid( $cap[ 2 ] ) ];
 		}
@@ -847,7 +848,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			return call_user_func( self::$selectors['attr'], self::decodeid( $cap[ 4 ] ), $cap[ 5 ] || '-', self::unquote( $value ), (bool)$i );
 		}
 
-		throw new SyntaxError( 'Unknown Selector.' );
+		throw new InvalidArgumentException( 'Unknown Selector.' );
 	}
 
 	// Returns true if all $func return true
