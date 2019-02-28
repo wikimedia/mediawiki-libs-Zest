@@ -122,20 +122,20 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private static function makeInside( string $start, string $end ): string {
 		$regex = preg_replace(
 			'/>/', $end, preg_replace(
-				'/</', $start, self::resource( self::$rules->inside )
+				'/</', $start, self::reSource( self::$rules->inside )
 			)
 		);
 		return '/' . $regex . '/Su';
 	}
 
-	private static function resource( string $regex ): string {
+	private static function reSource( string $regex ): string {
 		// strip delimiter and flags from regular expression
 		return preg_replace( '/(^\/)|(\/[a-z]*$)/Diu', '', $regex );
 	}
 
 	private static function replace( string $regex, string $name, string $val ): string {
-		$regex = self::resource( $regex );
-		$regex = str_replace( $name, self::resource( $val ), $regex );
+		$regex = self::reSource( $regex );
+		$regex = str_replace( $name, self::reSource( $val ), $regex );
 		return '/' . $regex . '/Su';
 	}
 
