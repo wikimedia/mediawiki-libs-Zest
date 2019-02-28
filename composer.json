@@ -1,9 +1,9 @@
 {
-	"name": "wikimedia/zest.php",
+	"name": "wikimedia/zest",
 	"description": "Fast, lightweight, extensible CSS selector engine for PHP.",
 	"keywords": ["css", "selector", "engine"],
 	"license": "MIT",
-	"homepage": "https://github.com/wikimedia/zest.php",
+	"homepage": "https://github.com/wikimedia/mediawiki-lib-zest",
 	"authors": [
 		{
 			"name": "Christopher Jeffrey"
