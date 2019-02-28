@@ -200,288 +200,310 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	}
 
 	/**
-	 * Simple Selectors
-	 * @var array<string,((callable(string):(callable(DOMNode):bool))|(callable(DOMNode):bool))>
+	 * Simple Selectors which take no arguments.
+	 * @var array<string,(callable(DOMNode):bool)>
 	 */
-	private static $selectors;
+	private static $selectors0 = [];
+
+	/**
+	 * Simple Selectors which take one argument.
+	 * @var array<string,(callable(string):(callable(DOMNode):bool))>
+	 */
+	private static $selectors1 = [];
+
+	/**
+	 * Add a custom selector that takes no parameters.
+	 * @param string $key Name of the selector
+	 * @param callable(DOMNode):bool $func
+	 *   The selector match function
+	 */
+	public static function addSelector0( string $key, callable $func ) {
+		self::$selectors0[$key] = $func;
+	}
+
+	/**
+	 * Add a custom selector that takes 1 parameter, which is passed as a
+	 * string.
+	 * @param string $key Name of the selector
+	 * @param callable(string):(callable(DOMNode):bool) $func
+	 *   The selector match function
+	 */
+	public static function addSelector1( string $key, callable $func ) {
+		self::$selectors1[$key] = $func;
+	}
 
 	private static function initSelectors() {
-		if ( isset( self::$selectors ) ) {
-			return;
-		}
-		self::$selectors = [
-			'*' => function ( DOMNode $el ): bool {
-				return true;
-			},
-			'type' => function ( string $type ): callable {
-				$type = strtolower( $type );
-				return function ( DOMNode $el ) use ( $type ): bool {
-					return strtolower( $el->nodeName ) === $type;
-				};
-			},
-			':first-child' => function ( DOMNode $el ): bool {
-				return !self::prev( $el ) && self::parentIsElement( $el );
-			},
-			':last-child' => function ( DOMNode $el ): bool {
-				return !self::next( $el ) && self::parentIsElement( $el );
-			},
-			':only-child' => function ( DOMNode $el ): bool {
-				return !self::prev( $el ) && !self::next( $el )
+		self::addSelector0( '*', function ( DOMNode $el ): bool {
+			return true;
+		} );
+		self::addSelector1( 'type', function ( string $type ): callable {
+			$type = strtolower( $type );
+			return function ( DOMNode $el ) use ( $type ): bool {
+				return strtolower( $el->nodeName ) === $type;
+			};
+		} );
+		self::addSelector0( ':first-child', function ( DOMNode $el ): bool {
+			return !self::prev( $el ) && self::parentIsElement( $el );
+		} );
+		self::addSelector0( ':last-child', function ( DOMNode $el ): bool {
+			return !self::next( $el ) && self::parentIsElement( $el );
+		} );
+		self::addSelector0( ':only-child', function ( DOMNode $el ): bool {
+			return !self::prev( $el ) && !self::next( $el )
 				&& self::parentIsElement( $el );
-			},
-			':nth-child' => function ( string $param, $last = false ): callable {
-				return self::nth( $param, function () {
-					return true;
-				}, $last );
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':nth-last-child' => function ( string $param ): callable {
-				return self::$selectors[ ':nth-child' ]( $param, true );
-			},
-			':root' => function ( DOMNode $el ): bool {
-				return $el->ownerDocument->documentElement === $el;
-			},
-			':empty' => function ( DOMNode $el ): bool {
-				return !$el->firstChild;
-			},
-			':not' => function ( string $sel ) {
-				$test = self::compileGroup( $sel );
-				return function ( DOMNode $el ) use ( $test ): bool {
-					return !call_user_func( $test, $el );
-				};
-			},
-			':first-of-type' => function ( DOMNode $el ): bool {
-				if ( !self::parentIsElement( $el ) ) {
-					return false;
-				}
-				$type = $el->nodeName;
-				while ( $el = self::prev( $el ) ) {
-					if ( $el->nodeName === $type ) {
-						return false;
-					}
-				}
+		} );
+		self::addSelector1( ':nth-child', function ( string $param, bool $last = false ): callable {
+			return self::nth( $param, function () {
 				return true;
-			},
-			':last-of-type' => function ( DOMNode $el ): bool {
-				if ( !self::parentIsElement( $el ) ) {
-					return false;
-				}
-				$type = $el->nodeName;
-				while ( $el = self::next( $el ) ) {
-					if ( $el->nodeName === $type ) {
-						return false;
-					}
-				}
-				return true;
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':only-of-type' => function ( DOMNode $el ): bool {
-				return self::$selectors[ ':first-of-type' ]( $el ) &&
-					self::$selectors[ ':last-of-type' ]( $el );
-			},
-			':nth-of-type' => function ( string $param, bool $last = false ): callable  {
-				return self::nth( $param, function ( DOMNode $rel, DOMNode $el ) {
-					return $rel->nodeName === $el->nodeName;
-				}, $last );
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':nth-last-of-type' => function ( string $param ): callable {
-				return self::$selectors[ ':nth-of-type' ]( $param, true );
-			},
-			':checked' => function ( DOMNode $el ): bool {
-				'@phan-var DOMElement $el';
-				// XXX these properties don't exist in the PHP DOM
-				// return !!( $el->checked || $el->selected );
-				return (bool)( $el->hasAttribute( 'checked' ) || $el->hasAttribute( 'selected' ) );
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':indeterminate' => function ( DOMNode $el ): bool {
-				return !self::$selectors[ ':checked' ]( $el );
-			},
-			':enabled' => function ( DOMNode $el ): bool {
-				'@phan-var DOMElement $el';
-				// XXX these properties don't exist in the PHP DOM
-				// return !$el->disabled && $el->type !== 'hidden';
-				return !$el->hasAttribute( 'disabled' ) && $el->getAttribute( 'type' ) !== 'hidden';
-			},
-			':disabled' => function ( DOMNode $el ): bool {
-				'@phan-var DOMElement $el';
-				// XXX these properties don't exist in the PHP DOM
-				// return !!$el->disabled;
-				return $el->hasAttribute( 'disabled' );
-			},
-			/*
-			':target' => function ( DOMNode $el ) use ( &$window ) {
-				return $el->id === $window->location->hash->substring( 1 );
-			},
-			':focus' => function ( DOMNode $el ) {
-				return $el === $el->ownerDocument->activeElement;
-			},
-			*/
-			':is' => function ( string $sel ): callable {
-				return self::compileGroup( $sel );
-			},
-			// :matches is an older name for :is; see
-			// https://github.com/w3c/csswg-drafts/issues/3258
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':matches' => function ( string $sel ): callable {
-				return self::$selectors[ ':is' ]( $sel );
-			},
-			':nth-match' => function ( string $param, bool $last = false ): callable {
-				$args = preg_split( '/\s*,\s*/', $param );
-				$arg = array_shift( $args );
-				$test = self::compileGroup( implode( ',', $args ) );
-
-				return self::nth( $arg, $test, $last );
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':nth-last-match' => function ( string $param ): callable {
-				return self::$selectors[ ':nth-match' ]( $param, true );
-			},
-			/*
-			':links-here' => function ( DOMNode $el ) use ( &$window ) {
-				return $el . '' === $window->location . '';
-			},
-			*/
-			':lang' => function ( string $param ): callable {
-				return function ( DOMNode $el ) use ( $param ): bool {
-					'@phan-var DOMElement $el';
-					while ( $el ) {
-						// PHP DOM doesn't have 'lang' property
-						$lang = $el->getAttribute( 'lang' );
-						if ( $lang ) {
-							return strpos( $lang, $param ) === 0;
-						}
-						$el = $el->parentNode;
-					}
-					return false;
-				};
-			},
-			':dir' => function ( string $param ): callable {
-				return function ( DOMNode $el ) use ( $param ): bool {
-					'@phan-var DOMElement $el';
-					while ( $el ) {
-						$dir = $el->getAttribute( 'dir' );
-						if ( $dir ) {
-							return $dir === $param;
-						}
-						$el = $el->parentNode;
-					}
-					return false;
-				};
-			},
-			':scope' => function ( DOMNode $el, $con = null ): bool {
-				$context = $con ?? $el->ownerDocument;
-				if ( $context->nodeType === 9 ) {
-					return $el === $context->documentElement;
-				}
-				return $el === $context;
-			},
-# ':any-link' => function ( $el ) {
-# return gettype( $el->href ) === 'string';
-# },
-# ':local-link' => function ( $el ) use ( &$window, &$truncateUrl ) {
-# if ( $el->nodeName ) {
-# return $el->href && $el->host === $window->location->host;
-# }
-# $param = +$el + 1;
-# return function ( $el ) use ( &$el, &$window, &$truncateUrl, &$param ) {
-# if ( !$el->href ) { return;  }
-#
-# $url = $window->location . '';
-# $href = $el . '';
-#
-# return $truncateUrl( $url, $param ) === $truncateUrl( $href, $param );
-# };
-# },
-# ':default' => function ( $el ) {
-# return !!$el->defaultSelected;
-# },
-# ':valid' => function ( $el ) {
-# return $el->willValidate || ( $el->validity && $el->validity->valid );
-# },
-			':invalid' => function ( $el ) use ( &$selectors ) {
-				return !self::$selectors[ ':valid' ]( $el );
-			},
-# ':in-range' => function ( $el ) {
-# return $el->value > $el->min && $el->value <= $el->max;
-# },
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':out-of-range' => function ( DOMNode $el ): bool {
-				return !self::$selectors[ ':in-range' ]( $el );
-			},
-			':required' => function ( DOMNode $el ): bool {
-				'@phan-var DOMElement $el';
-				return $el->hasAttribute( 'required' );
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':optional' => function ( DOMNode $el ): bool {
-				return !self::$selectors[ ':required' ]( $el );
-			},
-			':read-only' => function ( DOMNode $el ): bool {
-				'@phan-var DOMElement $el';
-				if ( $el->hasAttribute( 'readOnly' ) ) {
-					return true;
-				}
-
-				$attr = $el->getAttribute( 'contenteditable' );
-				$name = strtolower( $el->nodeName );
-
-				$name = $name !== 'input' && $name !== 'textarea';
-
-				return ( $name || $el->hasAttribute( 'disabled' ) ) && $attr == null;
-			},
-			/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
-			':read-write' => function ( DOMNode $el ): bool {
-				return !self::$selectors[ ':read-only' ]( $el );
-			},
-			':hover' => function ( DOMNode $el ): bool {
-				throw new Error( ':hover is not supported.' );
-			},
-			':active' => function ( DOMNode $el ): bool {
-			throw new Error( ':active is not supported.' );
-			},
-			':link' => function ( DOMNode $el ): bool {
-				throw new Error( ':link is not supported.' );
-			},
-			':visited' => function ( DOMNode $el ): bool {
-			throw new Error( ':visited is not supported.' );
-			},
-			':column' => function ( DOMNode $el ): bool {
-				throw new Error( ':column is not supported.' );
-			},
-			':nth-column' => function ( DOMNode $el ): bool {
-			throw new Error( ':nth-column is not supported.' );
-			},
-			':nth-last-column' => function ( DOMNode $el ): bool {
-				throw new Error( ':nth-last-column is not supported.' );
-			},
-			':current' => function ( DOMNode $el ): bool {
-			throw new Error( ':current is not supported.' );
-			},
-			':past' => function ( DOMNode $el ): bool {
-				throw new Error( ':past is not supported.' );
-			},
-			':future' => function ( DOMNode $el ): bool {
-			throw new Error( ':future is not supported.' );
-			},
-			// Non-standard, for compatibility purposes.
-			':contains' => function ( string $param ): callable {
-				return function ( DOMNode $el ) use ( $param ): bool {
-					$text = $el->textContent;
-					return strpos( $text, $param ) !== false;
-				};
-			},
-			':has' => function ( string $param ): callable {
-				return function ( DOMNode $el ) use ( $param ): bool {
-					'@phan-var DOMElement $el';
-					return count( self::find( $param, $el ) ) > 0;
-				};
+			}, $last );
+		} );
+		/** @suppress PhanParamTooMany */
+		self::addSelector1( ':nth-last-child', function ( string $param ): callable {
+			return self::$selectors1[ ':nth-child' ]( $param, true );
+		} );
+		self::addSelector0( ':root', function ( DOMNode $el ): bool {
+			return $el->ownerDocument->documentElement === $el;
+		} );
+		self::addSelector0( ':empty', function ( DOMNode $el ): bool {
+			return !$el->firstChild;
+		} );
+		self::addSelector1( ':not', function ( string $sel ) {
+			$test = self::compileGroup( $sel );
+			return function ( DOMNode $el ) use ( $test ): bool {
+				return !call_user_func( $test, $el );
+			};
+		} );
+		self::addSelector0( ':first-of-type', function ( DOMNode $el ): bool {
+			if ( !self::parentIsElement( $el ) ) {
+				return false;
 			}
-			// Potentially add more pseudo selectors for
-			// compatibility with sizzle and most other
-			// selector engines (?).
-		];
+			$type = $el->nodeName;
+			while ( $el = self::prev( $el ) ) {
+				if ( $el->nodeName === $type ) {
+					return false;
+				}
+			}
+			return true;
+		} );
+		self::addSelector0( ':last-of-type', function ( DOMNode $el ): bool {
+			if ( !self::parentIsElement( $el ) ) {
+				return false;
+			}
+			$type = $el->nodeName;
+			while ( $el = self::next( $el ) ) {
+				if ( $el->nodeName === $type ) {
+					return false;
+				}
+			}
+			return true;
+		} );
+		self::addSelector0( ':only-of-type', function ( DOMNode $el ): bool {
+			return self::$selectors0[ ':first-of-type' ]( $el ) &&
+				self::$selectors0[ ':last-of-type' ]( $el );
+		} );
+		self::addSelector1( ':nth-of-type', function ( string $param, bool $last = false ): callable  {
+			return self::nth( $param, function ( DOMNode $rel, DOMNode $el ) {
+				return $rel->nodeName === $el->nodeName;
+			}, $last );
+		} );
+		/** @suppress PhanParamTooMany */
+		self::addSelector1( ':nth-last-of-type', function ( string $param ): callable {
+			return self::$selectors1[ ':nth-of-type' ]( $param, true );
+		} );
+		self::addSelector0( ':checked', function ( DOMNode $el ): bool {
+			'@phan-var DOMElement $el';
+			// XXX these properties don't exist in the PHP DOM
+			// return !!( $el->checked || $el->selected );
+			return (bool)( $el->hasAttribute( 'checked' ) || $el->hasAttribute( 'selected' ) );
+		} );
+		/** @suppress PhanParamTooMany, PhanTypeMismatchArgument */
+		self::addSelector0( ':indeterminate', function ( DOMNode $el ): bool {
+			return !self::$selectors0[ ':checked' ]( $el );
+		} );
+		self::addSelector0( ':enabled', function ( DOMNode $el ): bool {
+			'@phan-var DOMElement $el';
+			// XXX these properties don't exist in the PHP DOM
+			// return !$el->disabled && $el->type !== 'hidden';
+			return !$el->hasAttribute( 'disabled' ) && $el->getAttribute( 'type' ) !== 'hidden';
+		} );
+		self::addSelector0( ':disabled', function ( DOMNode $el ): bool {
+			'@phan-var DOMElement $el';
+			// XXX these properties don't exist in the PHP DOM
+			// return !!$el->disabled;
+			return $el->hasAttribute( 'disabled' );
+		} );
+		/*
+		self::addSelector0( ':target', function ( DOMNode $el ) use ( &$window ) {
+			return $el->id === $window->location->hash->substring( 1 );
+		});
+		self::addSelector0( ':focus', function ( DOMNode $el ) {
+			return $el === $el->ownerDocument->activeElement;
+		});
+		*/
+		self::addSelector1( ':is', function ( string $sel ): callable {
+			return self::compileGroup( $sel );
+		} );
+		// :matches is an older name for :is; see
+		// https://github.com/w3c/csswg-drafts/issues/3258
+		self::addSelector1( ':matches', function ( string $sel ): callable {
+			return self::$selectors1[ ':is' ]( $sel );
+		} );
+		self::addSelector1( ':nth-match', function ( string $param, bool $last = false ): callable {
+			$args = preg_split( '/\s*,\s*/', $param );
+			$arg = array_shift( $args );
+			$test = self::compileGroup( implode( ',', $args ) );
+
+			return self::nth( $arg, $test, $last );
+		} );
+		/** @suppress PhanParamTooMany */
+		self::addSelector1( ':nth-last-match', function ( string $param ): callable {
+			return self::$selectors1[ ':nth-match' ]( $param, true );
+		} );
+		/*
+		self::addSelector0( ':links-here', function ( DOMNode $el ) use ( &$window ) {
+			return $el . '' === $window->location . '';
+		});
+		*/
+		self::addSelector1( ':lang', function ( string $param ): callable {
+			return function ( DOMNode $el ) use ( $param ): bool {
+				'@phan-var DOMElement $el';
+				while ( $el ) {
+					// PHP DOM doesn't have 'lang' property
+					$lang = $el->getAttribute( 'lang' );
+					if ( $lang ) {
+						return strpos( $lang, $param ) === 0;
+					}
+					$el = $el->parentNode;
+				}
+				return false;
+			};
+		} );
+		self::addSelector1( ':dir', function ( string $param ): callable {
+			return function ( DOMNode $el ) use ( $param ): bool {
+				'@phan-var DOMElement $el';
+				while ( $el ) {
+					$dir = $el->getAttribute( 'dir' );
+					if ( $dir ) {
+						return $dir === $param;
+					}
+					$el = $el->parentNode;
+				}
+				return false;
+			};
+		} );
+		self::addSelector0( ':scope', function ( DOMNode $el, $con = null ): bool {
+			$context = $con ?? $el->ownerDocument;
+			if ( $context->nodeType === 9 ) {
+				return $el === $context->documentElement;
+			}
+			return $el === $context;
+		} );
+		/*
+		self::addSelector0( ':any-link', function ( DOMNode $el ):bool {
+			return gettype( $el->href ) === 'string';
+		});
+		self::addSelector( ':local-link', function ( DOMNode $el ) use ( &$window ) {
+			if ( $el->nodeName ) {
+				return $el->href && $el->host === $window->location->host;
+			}
+			// XXX this is really selector1 not selector0
+			$param = +$el + 1;
+			return function ( DOMNode $el ) use ( &$window, $param ) {
+				if ( !$el->href ) { return;  }
+
+				$url = $window->location . '';
+				$href = $el . '';
+
+				return self::truncateUrl( $url, $param ) === self::truncateUrl( $href, $param );
+			};
+		});
+		self::addSelector0( ':default', function ( DOMNode $el ):bool {
+			return !!$el->defaultSelected;
+		});
+		self::addSelector0( ':valid', function ( DOMNode $el ):bool {
+			return $el->willValidate || ( $el->validity && $el->validity->valid );
+		});
+		*/
+		self::addSelector0( ':invalid', function ( DOMNode $el ):bool {
+			return !self::$selectors0[ ':valid' ]( $el );
+		} );
+		/*
+		self::addSelector0( ':in-range', function ( DOMNode $el ):bool {
+			return $el->value > $el->min && $el->value <= $el->max;
+		});
+		*/
+		self::addSelector0( ':out-of-range', function ( DOMNode $el ): bool {
+			return !self::$selectors0[ ':in-range' ]( $el );
+		} );
+		self::addSelector0( ':required', function ( DOMNode $el ): bool {
+			'@phan-var DOMElement $el';
+			return $el->hasAttribute( 'required' );
+		} );
+		self::addSelector0( ':optional', function ( DOMNode $el ): bool {
+			return !self::$selectors0[ ':required' ]( $el );
+		} );
+		self::addSelector0( ':read-only', function ( DOMNode $el ): bool {
+			'@phan-var DOMElement $el';
+			if ( $el->hasAttribute( 'readOnly' ) ) {
+				return true;
+			}
+
+			$attr = $el->getAttribute( 'contenteditable' );
+			$name = strtolower( $el->nodeName );
+
+			$name = $name !== 'input' && $name !== 'textarea';
+
+			return ( $name || $el->hasAttribute( 'disabled' ) ) && $attr == null;
+		} );
+		self::addSelector0( ':read-write', function ( DOMNode $el ): bool {
+			return !self::$selectors0[ ':read-only' ]( $el );
+		} );
+		self::addSelector0( ':hover', function ( DOMNode $el ): bool {
+			throw new Error( ':hover is not supported.' );
+		} );
+		self::addSelector0( ':active', function ( DOMNode $el ): bool {
+			throw new Error( ':active is not supported.' );
+		} );
+		self::addSelector0( ':link', function ( DOMNode $el ): bool {
+			throw new Error( ':link is not supported.' );
+		} );
+		self::addSelector0( ':visited', function ( DOMNode $el ): bool {
+			throw new Error( ':visited is not supported.' );
+		} );
+		self::addSelector0( ':column', function ( DOMNode $el ): bool {
+			throw new Error( ':column is not supported.' );
+		} );
+		self::addSelector0( ':nth-column', function ( DOMNode $el ): bool {
+			throw new Error( ':nth-column is not supported.' );
+		} );
+		self::addSelector0( ':nth-last-column', function ( DOMNode $el ): bool {
+			throw new Error( ':nth-last-column is not supported.' );
+		} );
+		self::addSelector0( ':current', function ( DOMNode $el ): bool {
+			throw new Error( ':current is not supported.' );
+		} );
+		self::addSelector0( ':past', function ( DOMNode $el ): bool {
+			throw new Error( ':past is not supported.' );
+		} );
+		self::addSelector0( ':future', function ( DOMNode $el ): bool {
+			throw new Error( ':future is not supported.' );
+		} );
+		// Non-standard, for compatibility purposes.
+		self::addSelector1( ':contains', function ( string $param ): callable {
+			return function ( DOMNode $el ) use ( $param ): bool {
+				$text = $el->textContent;
+				return strpos( $text, $param ) !== false;
+			};
+		} );
+		self::addSelector1( ':has', function ( string $param ): callable {
+			return function ( DOMNode $el ) use ( $param ): bool {
+				'@phan-var DOMElement $el';
+				return count( self::find( $param, $el ) ) > 0;
+			};
+		} );
+		// Potentially add more pseudo selectors for
+		// compatibility with sizzle and most other
+		// selector engines (?).
 	}
 
 	/** @return callable(DOMNode):bool */
@@ -562,127 +584,138 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 * Attribute Operators
 	 * @var array<string,(callable(string,string):bool)>
 	 */
-	private static $operators;
+	private static $operators = [];
+
+	/**
+	 * Add a custom operator
+	 * @param string $key Name of the operator
+	 * @param callable(string,string):bool $func
+	 *   The operator match function
+	 */
+	public static function addOperator( string $key, callable $func ) {
+		self::$operators[$key] = $func;
+	}
 
 	private static function initOperators() {
-		if ( isset( self::$operators ) ) {
-			return;
-		}
-		self::$operators = [
-			'-' => function ( string $attr, string $val ): bool {
-				return true;
-			},
-			'=' => function ( string $attr, string $val ): bool {
-				return $attr === $val;
-			},
-			'*=' => function ( string $attr, string $val ): bool {
-				return strpos( $attr, $val ) !== false;
-			},
-			'~=' => function ( string $attr, string $val ): bool {
-				$attrLen = strlen( $attr );
-				$valLen = strlen( $val );
-				for ( $s = 0;  $s < $attrLen;  $s = $i + 1 ) {
-					$i = strpos( $attr, $val, $s );
-					if ( $i === false ) {
-						return false;
-					}
-					$j = $i + $valLen;
-					$f = ( $i === 0 ) ? ' ' : $attr[ $i - 1 ];
-					$l = ( $j >= $attrLen ) ? ' ' : $attr[ $j ];
-					if ( $f === ' ' && $l === ' ' ) {
-						return true;
-					}
-				}
-				return false;
-			},
-			'|=' => function ( string $attr, string $val ): bool {
-				$i = strpos( $attr, $val );
-				if ( $i !== 0 ) {
+		self::addOperator( '-', function ( string $attr, string $val ): bool {
+			return true;
+		} );
+		self::addOperator( '=', function ( string $attr, string $val ): bool {
+			return $attr === $val;
+		} );
+		self::addOperator( '*=', function ( string $attr, string $val ): bool {
+			return strpos( $attr, $val ) !== false;
+		} );
+		self::addOperator( '~=', function ( string $attr, string $val ): bool {
+			$attrLen = strlen( $attr );
+			$valLen = strlen( $val );
+			for ( $s = 0;  $s < $attrLen;  $s = $i + 1 ) {
+				$i = strpos( $attr, $val, $s );
+				if ( $i === false ) {
 					return false;
 				}
-				$j = $i + strlen( $val );
-				if ( $j >= strlen( $attr ) ) {
+				$j = $i + $valLen;
+				$f = ( $i === 0 ) ? ' ' : $attr[ $i - 1 ];
+				$l = ( $j >= $attrLen ) ? ' ' : $attr[ $j ];
+				if ( $f === ' ' && $l === ' ' ) {
 					return true;
 				}
-				$l = $attr[ $j ];
-				return $l === '-';
-			},
-			'^=' => function ( string $attr, string $val ): bool {
-				return strpos( $attr, $val ) === 0;
-			},
-			'$=' => function ( string $attr, string $val ): bool {
-				$i = strrpos( $attr, $val );
-				return $i !== false && $i + strlen( $val ) === strlen( $attr );
-			},
-			// non-standard
-			'!=' => function ( string $attr, string $val ): bool {
-				return $attr !== $val;
-			},
-		];
+			}
+			return false;
+		} );
+		self::addOperator( '|=', function ( string $attr, string $val ): bool {
+			$i = strpos( $attr, $val );
+			if ( $i !== 0 ) {
+				return false;
+			}
+			$j = $i + strlen( $val );
+			if ( $j >= strlen( $attr ) ) {
+				return true;
+			}
+			$l = $attr[ $j ];
+			return $l === '-';
+		} );
+		self::addOperator( '^=', function ( string $attr, string $val ): bool {
+			return strpos( $attr, $val ) === 0;
+		} );
+		self::addOperator( '$=', function ( string $attr, string $val ): bool {
+			$i = strrpos( $attr, $val );
+			return $i !== false && $i + strlen( $val ) === strlen( $attr );
+		} );
+		// non-standard
+		self::addOperator( '!=', function ( string $attr, string $val ): bool {
+			return $attr !== $val;
+		} );
 	}
 
 	/**
 	 * Combinator Logic
-	 * @var array<string,(callable(callable(DOMNode):bool):(callable(DOMNode):?DOMNode))>
+	 * @var array<string,(callable(callable(DOMNode):bool):(callable(DOMNode):(?DOMNode)))>
 	 */
-	private static $combinators;
+	private static $combinators = [];
+
+	/**
+	 * Add a custom combinator
+	 * @param string $key Name of the combinator
+	 * @param callable(callable(DOMNode):bool):(callable(DOMNode):(?DOMNode)) $func
+	 *   The combinator match function
+	 */
+	public static function addCombinator( string $key, callable $func ) {
+		self::$combinators[$key] = $func;
+	}
 
 	private static function initCombinators() {
-		if ( isset( self::$combinators ) ) {
-			return;
-		}
-		self::$combinators = [
-			' ' => function ( callable $test ): callable {
-				return function ( DOMNode $el ) use ( $test ): ?DOMNode {
-					/*jshint -W084 */
-					while ( $el = $el->parentNode ) {
-						if ( call_user_func( $test, $el ) ) {
-							return $el;
-						}
-					}
-					return null;
-				};
-			},
-			'>' => function ( callable $test ): callable {
-				return function ( DOMNode $el ) use ( $test ): ?DOMNode {
-					if ( $el = $el->parentNode ) {
-						if ( call_user_func( $test, $el ) ) {
-							return $el;
-						}
-					}
-					return null;
-				};
-			},
-			'+' => function ( callable $test ): callable {
-				return function ( DOMNode $el ) use ( $test ): ?DOMNode {
-					if ( $el = self::prev( $el ) ) {
-						if ( call_user_func( $test, $el ) ) {
-							return $el;
-						}
-					}
-					return null;
-				};
-			},
-			'~' => function ( callable $test ): callable {
-				return function ( DOMNode $el ) use ( $test ): ?DOMNode {
-					while ( $el = self::prev( $el ) ) {
-						if ( call_user_func( $test, $el ) ) {
-							return $el;
-						}
-					}
-					return null;
-				};
-			},
-			'noop' => function ( callable $test ): callable {
-				return function ( DOMNode $el ) use ( $test ): ?DOMNode {
+		self::addCombinator( ' ', function ( callable $test ): callable {
+			return function ( DOMNode $el ) use ( $test ): ?DOMNode {
+				/*jshint -W084 */
+				while ( $el = $el->parentNode ) {
 					if ( call_user_func( $test, $el ) ) {
 						return $el;
 					}
-					return null;
-				};
-			},
-		];
+				}
+				return null;
+			};
+		} );
+		self::addCombinator( '>', function ( callable $test ): callable {
+			return function ( DOMNode $el ) use ( $test ): ?DOMNode {
+				if ( $el = $el->parentNode ) {
+					if ( call_user_func( $test, $el ) ) {
+						return $el;
+					}
+				}
+				return null;
+			};
+		} );
+		self::addCombinator( '+', function ( callable $test ): callable {
+			return function ( DOMNode $el ) use ( $test ): ?DOMNode {
+				if ( $el = self::prev( $el ) ) {
+					if ( call_user_func( $test, $el ) ) {
+						return $el;
+					}
+				}
+				return null;
+			};
+		} );
+		self::addCombinator( '~', function ( callable $test ): callable {
+			return function ( DOMNode $el ) use ( $test ): ?DOMNode {
+				while ( $el = self::prev( $el ) ) {
+					if ( call_user_func( $test, $el ) ) {
+						return $el;
+					}
+				}
+				return null;
+			};
+		} );
+		self::addCombinator( 'noop', function ( callable $test ): callable {
+			return function ( DOMNode $el ) use ( $test ): ?DOMNode {
+				if ( call_user_func( $test, $el ) ) {
+					return $el;
+				}
+				return null;
+			};
+		} );
 	}
+
 	private static function makeRef( callable $test, string $name ): ZestFunc {
 		$node = null;
 		$ref = new ZestFunc( function ( DOMNode $el ) use ( &$node, &$ref ) : bool {
@@ -729,9 +762,6 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private static $rules;
 
 	public static function initRules() {
-		if ( isset( self::$rules ) ) {
-			return;
-		}
 		self::$rules = (object)[
 		'escape' => '/\\\(?:[^0-9A-Fa-f\r\n]|[0-9A-Fa-f]{1,6}[\r\n\t ]?)/',
 		'str_escape' => '/(escape)|\\\(\n|\r\n?|\f)/',
@@ -856,13 +886,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private static function tokQname( string $cap ): callable {
 		// qname
 		if ( $cap === '*' ) {
-			$test = self::$selectors['*'];
-			'@phan-var callable(DOMNode):bool $test';
-			return $test;
+			return self::$selectors0['*'];
 		} else {
-			$test = self::$selectors['type'];
-			'@phan-var callable(string):(callable(DOMNode):bool) $test';
-			return $test( self::decodeid( $cap ) );
+			return self::$selectors1['type']( self::decodeid( $cap ) );
 		}
 	}
 
@@ -879,13 +905,10 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		// pseudo-name
 		// inside-pseudo
 		if ( $cap[ 2 ] ) {
-			$test = self::$selectors[ self::decodeid( $cap[ 2 ] ) ];
 			if ( isset( $cap[3] ) && $cap[ 3 ] ) {
-				'@phan-var callable(string):(callable(DOMNode):bool) $test';
-				return $test( self::unquote( $cap[ 3 ] ) );
+				return self::$selectors1[ self::decodeid( $cap[ 2 ] ) ]( self::unquote( $cap[ 3 ] ) );
 			} else {
-				'@phan-var callable(DOMNode):bool $test';
-				return $test;
+				return self::$selectors0[ self::decodeid( $cap[ 2 ] ) ];
 			}
 		}
 
@@ -1040,7 +1063,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 * @return array Elements matching the CSS selector
 	 */
 	public static function find( string $sel, DOMNode $context ): array {
-		self::init(); // XXX
+		self::init();
 		/* when context isn't a DocumentFragment and the selector is simple: */
 		if ( $context->nodeType !== 11 && strpos( $sel, ' ' ) === false ) {
 			if ( $sel[ 0 ] === '#' /*&& $context->rooted*/ && preg_match( '/^#[A-Z_][-A-Z0-9_]*$/', $sel ) ) {
@@ -1083,7 +1106,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 * @return bool True iff the element matches the selector
 	 */
 	public static function matches( DOMNode $el, string $sel ): bool {
-		self::init(); // XXX
+		self::init();
 		$test = new ZestFunc( function ( DOMNode $el ):bool {
 			return true;
 		} );
@@ -1097,11 +1120,16 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return false;
 	}
 
+	/** @var bool */
+	private static $inited = false;
 	private static function init() {
-		self::initRules();
-		self::initSelectors();
-		self::initOperators();
-		self::initCombinators();
+		if ( !self::$inited ) {
+			self::initRules();
+			self::initSelectors();
+			self::initOperators();
+			self::initCombinators();
+			self::$inited = true;
+		}
 	}
 
 }
