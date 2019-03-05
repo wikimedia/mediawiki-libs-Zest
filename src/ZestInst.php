@@ -1118,7 +1118,10 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	public function find( string $sel, DOMNode $context ): array {
 		/* when context isn't a DocumentFragment and the selector is simple: */
 		if ( $context->nodeType !== 11 && strpos( $sel, ' ' ) === false ) {
-			if ( $sel[ 0 ] === '#' /*&& $context->rooted*/ && preg_match( '/^#[A-Z_][-A-Z0-9_]*$/', $sel ) ) {
+			// https://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
+			// Valid identifiers starting with a hyphen or with escape
+			// sequences will be handled correctly by the fall-through case.
+			if ( $sel[ 0 ] === '#' /*&& $context->rooted*/ && preg_match( '/^#[A-Za-z_](?:[-A-Za-z0-9_]|[^\0-\237])*$/Su', $sel ) ) {
 				/*
 				if ( $context->doc->_hasMultipleElementsWithId ) {
 					$id = $sel->substring( 1 );
@@ -1128,10 +1131,34 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					}
 				}
 				*/
-				if ( $context instanceof \DOMDocument ) {
-					$id = substr( $sel, 1 );
-					$r = $context->getElementById( $id );
-					return ( $r ) ? [ $r ] : [];
+				// Note that the PHP implementation can't detect the case
+				// where there are multiple elements with the same ID. Alas.
+				$doc = ( $context instanceof \DOMDocument ) ?
+					$context : $context->ownerDocument;
+				$id = substr( $sel, 1 );
+				// PHP doesn't provide an DOMElement-scoped version of
+				// getElementById, so we can't call this on $context --
+				// but that's okay because (1) IDs should be unique, and
+				// (2) we verify the scope of the returned element below
+				// anyway (to work around bugs with deleted-but-not-gc'ed
+				// nodes).
+				$r = $doc->getElementById( $id );
+				// Note that we could return null here because the
+				// DOMDocument hasn't had an "id attribute" set. See:
+				// http://php.net/manual/en/domdocument.getelementbyid.php
+				if ( $r !== null ) {
+					// Verify that this node is actually rooted in the
+					// document (or in the context), since the element
+					// isn't removed from the index immediately when it
+					// is deleted.
+					for ( $parent = $r; $parent; $parent = $parent->parentNode ) {
+						if ( $parent === $context ) {
+							return [ $r ];
+						}
+					}
+					// It's possible a deleted-but-still-indexed element was
+					// shadowing a later-added element, so we can't return
+					// null here directly; fallback to a full search.
 				}
 			}
 			/*

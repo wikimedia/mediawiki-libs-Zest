@@ -78,6 +78,35 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		];
 	}
 
+	/**
+	 * @dataProvider findIdProvider
+	 */
+	public function testFindId( bool $useRemex ) {
+		if ( $useRemex ) {
+			$doc = self::loadHTML( __DIR__ . "/index.html" );
+		} else {
+			$doc = new DOMDocument;
+			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+		}
+		$matches = Zest::find( '#hi', $doc );
+		$this->assertSame( count( $matches ), 1 );
+		$el0 = $matches[0];
+		$ns = $doc->documentElement->namespaceURI;
+		$el1 = $doc->createElementNS( $ns, 'p' );
+		$el1->setAttribute( 'id', 'hi' );
+		$el2 = $doc->createElementNS( $ns, 'a' );
+		$el2->setAttribute( 'id', 'hi' );
+		Zest::find( 'body', $doc )[0]->appendChild( $el2 );
+		$el0->parentNode->removeChild( $el0 );
+		$matches = Zest::find( '#hi', $doc );
+		$this->assertSame( count( $matches ), 1 );
+		$this->assertContains( $el2, $matches );
+	}
+
+	public function findIdProvider() {
+		return [ [ false ], [ true ] ];
+	}
+
 	public static function toXPath( DOMNode $node ) {
 		// which child of parent is this?
 		$parent = $node->parentNode;
