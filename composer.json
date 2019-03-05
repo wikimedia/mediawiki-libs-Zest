@@ -27,6 +27,7 @@
 		"mediawiki/mediawiki-codesniffer": "24.0.0",
 		"mediawiki/minus-x": "0.3.1",
 		"ockcyp/covers-validator": "0.5.1 || 0.6.1",
+		"phan/phan": "^1.2",
 		"phpunit/phpunit": "^6.5",
 		"wikimedia/remex-html": "2.0.1",
 		"mediawiki/mediawiki-phan-config": "0.4.0"
@@ -40,6 +41,7 @@
 		"test": [
 			"parallel-lint . --exclude vendor",
 			"phpunit",
+			"@phan",
 			"covers-validator",
 			"phpcs -sp",
 			"minus-x check ."
@@ -48,6 +50,7 @@
 		"fix": [
 			"minus-x fix .",
 			"phpcbf"
-		]
+		],
+		"phan": "PHAN_DISABLE_XDEBUG_WARN=1 phan --allow-polyfill-parser"
 	}
 }
