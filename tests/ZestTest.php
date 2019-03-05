@@ -1,6 +1,11 @@
 <?php
 
+namespace Wikimedia\Zest\Tests;
+
 use Wikimedia\Zest\Zest;
+
+use \DOMDocument as DOMDocument;
+use \DOMNode as DOMNode;
 
 use RemexHtml\DOM;
 use RemexHtml\Tokenizer;

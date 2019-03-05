@@ -37,6 +37,11 @@
 			"Wikimedia\\Zest\\": "src/"
 		}
 	},
+	"autoload-dev": {
+		"psr-4": {
+			"Wikimedia\\Zest\\Tests\\": "tests/"
+		}
+	},
 	"scripts": {
 		"test": [
 			"parallel-lint . --exclude vendor",
