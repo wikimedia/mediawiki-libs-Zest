@@ -192,6 +192,22 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return $xpath->query( $query, $context );
 	}
 
+	private static function getElementsByClassName( DOMNode $context, string $className ): DOMNodeList {
+		// PHP doesn't have an implementation of this method; use XPath
+		// to quickly get results.  (It would be faster still if there was an
+		// actual index, but this will be about 25% faster than doing the
+		// tree traversal all in PHP.)
+		if ( $context instanceof DOMDocument ) {
+			$doc = $context;
+		} else {
+			$doc = $context->ownerDocument;
+		}
+		$xpath = new \DOMXPath( $doc );
+		// Note that we're guaranteed that $className matches \w+ here.
+		$query = ".//*[contains(concat(' ', @class, ' '), ' $className ')]";
+		return $xpath->query( $query, $context );
+	}
+
 	/**
 	 * Handle `nth` Selectors
 	 */
@@ -1161,11 +1177,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					// null here directly; fallback to a full search.
 				}
 			}
-			/*
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
-				return $context->getElementsByClassName( $sel->substring( 1 ) );
+				return iterator_to_array( self::getElementsByClassName( $context, substr( $sel, 1 ) ) );
 			}
-			*/
 			if ( preg_match( '/^\w+$/', $sel ) ) {
 				return iterator_to_array( self::getElementsByTagName( $context, $sel ) );
 			}
