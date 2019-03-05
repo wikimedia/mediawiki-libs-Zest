@@ -5,6 +5,7 @@ namespace Wikimedia\Zest;
 use \DOMDocument as DOMDocument;
 use \DOMElement as DOMElement;
 use \DOMNode as DOMNode;
+use \DOMNodeList as DOMNodeList;
 
 use \Error as Error;
 use \InvalidArgumentException as InvalidArgumentException;
@@ -152,6 +153,43 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$url = preg_replace( '/^(?:\w+:\/\/|\/+)/', '', $url );
 		$url = preg_replace( '/(?:\/+|\/*#.*?)$/', '', $url );
 		return implode( '/', explode( '/', $url, $num ) );
+	}
+
+	private static function getElementsByTagName( DOMNode $context, string $tagName ): DOMNodeList {
+		// This *should* just be a call to PHP's `getElementByTagName`
+		// function *BUT* PHP's implementation is 100x slower than using
+		// XPath to get the same results (!)
+		if ( $tagName !== '*' ) {
+			// XXX this assumes default PHP DOM implementation, which
+			// reports lowercase tag names in DOMNode->tagName (even though
+			// the DOM spec says it should report uppercase)
+			$tagName = strtolower( $tagName );
+			if ( !preg_match( '/^[_a-z][-.0-9_a-z]*$/S', $tagName ) ) {
+				if ( $context instanceof DOMDocument ) {
+					// XPath doesn't have escape rules; just fall back to PHP's
+					// (extremely slow) implementation
+					return $context->getElementsByTagName( $tagName );
+				}
+				// Ugh, PHP doesn't define getElementsByTagName except on the
+				// top-level document, and XPath doesn't have escape sequences.
+				// Let's cross our fingers that the nodeName is XML-safe.
+			}
+		}
+		if ( $context instanceof DOMDocument ) {
+			$doc = $context;
+		} else {
+			$doc = $context->ownerDocument;
+		}
+		$xpath = new \DOMXPath( $doc );
+		$ns = $doc->documentElement->namespaceURI;
+		if ( $ns ) {
+			// Namespaces are important to XPath (but not in general for HTML)
+			$xpath->registerNamespace( 'ns', $ns );
+			$query = ".//ns:$tagName";
+		} else {
+			$query = ".//$tagName";
+		}
+		return $xpath->query( $query, $context );
 	}
 
 	/**
@@ -728,7 +766,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$node = null;
 		$ref = new ZestFunc( function ( DOMNode $el ) use ( &$node, &$ref ) : bool {
 			$doc = $el->ownerDocument;
-			$nodes = $doc->getElementsByTagName( '*' );
+			$nodes = self::getElementsByTagName( $doc, '*' );
 			$i = count( $nodes );
 
 			while ( $i-- ) {
@@ -988,7 +1026,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 		$subject = new ZestFunc( function ( DOMNode $el ) use ( &$subject, &$target ): bool {
 			$node = $el->ownerDocument;
-			$scope = $node->getElementsByTagName( $subject->lname );
+			$scope = self::getElementsByTagName( $node, $subject->lname );
 			$i = count( $scope );
 
 			while ( $i-- ) {
@@ -1045,7 +1083,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private function findInternal( string $sel, DOMNode $node ): array {
 		$results = [];
 		$test = $this->compile( $sel );
-		$scope = $node->getElementsByTagName( $test->qname );
+		$scope = self::getElementsByTagName( $node, $test->qname );
 		$i = 0;
 		$el = null;
 
@@ -1058,7 +1096,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		if ( $test->sel ) {
 			while ( $test->sel ) {
 				$test = $this->compile( $test->sel );
-				$scope = $node->getElementsByTagName( $test->qname );
+				$scope = self::getElementsByTagName( $node, $test->qname );
 				foreach ( $scope as $el ) {
 					if ( call_user_func( $test->func, $el ) && !in_array( $el, $results ) ) {
 						$results[] = $el;
@@ -1102,11 +1140,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			}
 			*/
 			if ( preg_match( '/^\w+$/', $sel ) ) {
-				$nodes = [];
-				foreach ( $context->getElementsByTagName( $sel ) as $el ) {
-					$nodes[] = $el;
-				}
-				return $nodes;
+				return iterator_to_array( self::getElementsByTagName( $context, $sel ) );
 			}
 		}
 		/* do things the hard/slow way */
