@@ -168,6 +168,41 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		}
 	}
 
+	private static function getElementsById( DOMNode $context, string $id ): array {
+		$doc = ( $context instanceof \DOMDocument ) ?
+			$context : $context->ownerDocument;
+		// PHP doesn't provide an DOMElement-scoped version of
+		// getElementById, so we can't call this directly on $context --
+		// but that's okay because (1) IDs should be unique, and
+		// (2) we verify the scope of the returned element below
+		// anyway (to work around bugs with deleted-but-not-gc'ed
+		// nodes).
+		$r = $doc->getElementById( $id );
+		// Note that $r could be null here because the
+		// DOMDocument hasn't had an "id attribute" set, even if the id
+		// exists in the document. See:
+		// http://php.net/manual/en/domdocument.getelementbyid.php
+		if ( $r !== null ) {
+			// Verify that this node is actually rooted in the
+			// document (or in the context), since the element
+			// isn't removed from the index immediately when it
+			// is deleted. (Also PHP's call is not scoped.)
+			for ( $parent = $r; $parent; $parent = $parent->parentNode ) {
+				if ( $parent === $context ) {
+					return [ $r ];
+				}
+			}
+			// It's possible a deleted-but-still-indexed element was
+			// shadowing a later-added element, so we can't return
+			// null here directly; fallback to a full search.
+		}
+		// Do an xpath search, which is still a full traversal of the tree
+		// (sigh) but 25% faster than traversing it wholly in PHP.
+		$xpath = new \DOMXPath( $doc );
+		$query = './/*[@id=' . self::xpathQuote( $id ) . ']';
+		return iterator_to_array( $xpath->query( $query, $context ) );
+	}
+
 	private static function getElementsByTagName( DOMNode $context, string $tagName ): DOMNodeList {
 		// This *should* just be a call to PHP's `getElementByTagName`
 		// function *BUT* PHP's implementation is 100x slower than using
@@ -1141,6 +1176,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			// Valid identifiers starting with a hyphen or with escape
 			// sequences will be handled correctly by the fall-through case.
 			if ( $sel[ 0 ] === '#' /*&& $context->rooted*/ && preg_match( '/^#[A-Za-z_](?:[-A-Za-z0-9_]|[^\0-\237])*$/Su', $sel ) ) {
+				// Note that the PHP implementation can't detect the case
+				// where there are multiple elements with the same ID. Alas.
 				/*
 				if ( $context->doc->_hasMultipleElementsWithId ) {
 					$id = $sel->substring( 1 );
@@ -1150,35 +1187,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					}
 				}
 				*/
-				// Note that the PHP implementation can't detect the case
-				// where there are multiple elements with the same ID. Alas.
-				$doc = ( $context instanceof \DOMDocument ) ?
-					$context : $context->ownerDocument;
 				$id = substr( $sel, 1 );
-				// PHP doesn't provide an DOMElement-scoped version of
-				// getElementById, so we can't call this on $context --
-				// but that's okay because (1) IDs should be unique, and
-				// (2) we verify the scope of the returned element below
-				// anyway (to work around bugs with deleted-but-not-gc'ed
-				// nodes).
-				$r = $doc->getElementById( $id );
-				// Note that we could return null here because the
-				// DOMDocument hasn't had an "id attribute" set. See:
-				// http://php.net/manual/en/domdocument.getelementbyid.php
-				if ( $r !== null ) {
-					// Verify that this node is actually rooted in the
-					// document (or in the context), since the element
-					// isn't removed from the index immediately when it
-					// is deleted.
-					for ( $parent = $r; $parent; $parent = $parent->parentNode ) {
-						if ( $parent === $context ) {
-							return [ $r ];
-						}
-					}
-					// It's possible a deleted-but-still-indexed element was
-					// shadowing a later-added element, so we can't return
-					// null here directly; fallback to a full search.
-				}
+				return self::getElementsById( $context, $id );
 			}
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
 				return iterator_to_array( self::getElementsByClassName( $context, substr( $sel, 1 ) ) );
