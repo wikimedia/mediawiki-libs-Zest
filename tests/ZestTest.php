@@ -107,6 +107,32 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		return [ [ false ], [ true ] ];
 	}
 
+	/**
+	 * @dataProvider findTagProvider
+	 */
+	public function testFindTag( bool $useRemex ) {
+		if ( $useRemex ) {
+			$doc = self::loadHTML( __DIR__ . "/index.html" );
+		} else {
+			$doc = new DOMDocument;
+			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+		}
+		// Elements with non-word characters in the name
+		$ns = $doc->documentElement->namespaceURI;
+		$el = $doc->createElementNS( $ns, "p\u{00C0}p" );
+		Zest::find( 'body', $doc )[0]->appendChild( $el );
+		$matches = Zest::find( "p\u{00C0}p", $doc );
+		$this->assertSame( count( $matches ), 1 );
+		$this->assertContains( $el, $matches );
+		// Using CSS escape mechanism to smuggle quotation marks into tagname
+		$matches = Zest::find( 'p\\22\\27p', $doc );
+		$this->assertSame( count( $matches ), 0 );
+	}
+
+	public function findTagProvider() {
+		return [ [ false ], [ true ] ];
+	}
+
 	public static function toXPath( DOMNode $node ) {
 		// which child of parent is this?
 		$parent = $node->parentNode;

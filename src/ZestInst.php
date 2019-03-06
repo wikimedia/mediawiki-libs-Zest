@@ -155,26 +155,29 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return implode( '/', explode( '/', $url, $num ) );
 	}
 
+	private static function xpathQuote( string $s ): string {
+		// Ugly-but-functional escape mechanism for xpath query
+		$parts = explode( "'", $s );
+		$parts = array_map( function ( string $ss ) {
+			return "'$ss'";
+		}, $parts );
+		if ( count( $parts ) === 1 ) {
+			return $parts[0];
+		} else {
+			return 'concat(' . implode( ',"\'",', $parts ) . ')';
+		}
+	}
+
 	private static function getElementsByTagName( DOMNode $context, string $tagName ): DOMNodeList {
 		// This *should* just be a call to PHP's `getElementByTagName`
 		// function *BUT* PHP's implementation is 100x slower than using
 		// XPath to get the same results (!)
-		if ( $tagName !== '*' ) {
-			// XXX this assumes default PHP DOM implementation, which
-			// reports lowercase tag names in DOMNode->tagName (even though
-			// the DOM spec says it should report uppercase)
-			$tagName = strtolower( $tagName );
-			if ( !preg_match( '/^[_a-z][-.0-9_a-z]*$/S', $tagName ) ) {
-				if ( $context instanceof DOMDocument ) {
-					// XPath doesn't have escape rules; just fall back to PHP's
-					// (extremely slow) implementation
-					return $context->getElementsByTagName( $tagName );
-				}
-				// Ugh, PHP doesn't define getElementsByTagName except on the
-				// top-level document, and XPath doesn't have escape sequences.
-				// Let's cross our fingers that the nodeName is XML-safe.
-			}
-		}
+
+		// XXX this assumes default PHP DOM implementation, which
+		// reports lowercase tag names in DOMNode->tagName (even though
+		// the DOM spec says it should report uppercase)
+		$tagName = strtolower( $tagName );
+
 		if ( $context instanceof DOMDocument ) {
 			$doc = $context;
 		} else {
@@ -182,10 +185,10 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		}
 		$xpath = new \DOMXPath( $doc );
 		$ns = $doc->documentElement->namespaceURI;
-		if ( $ns ) {
-			// Namespaces are important to XPath (but not in general for HTML)
-			$xpath->registerNamespace( 'ns', $ns );
-			$query = ".//ns:$tagName";
+		if ( $tagName === '*' ) {
+			$query = ".//*";
+		} elseif ( $ns || !preg_match( '/^[_a-z][-.0-9_a-z]*$/S', $tagName ) ) {
+			$query = './/*[local-name()=' . self::xpathQuote( $tagName ) . ']';
 		} else {
 			$query = ".//$tagName";
 		}
@@ -203,8 +206,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			$doc = $context->ownerDocument;
 		}
 		$xpath = new \DOMXPath( $doc );
-		// Note that we're guaranteed that $className matches \w+ here.
-		$query = ".//*[contains(concat(' ', @class, ' '), ' $className ')]";
+		$quotedClassName = self::xpathQuote( " $className " );
+		$query = ".//*[contains(concat(' ', @class, ' '), $quotedClassName)]";
 		return $xpath->query( $query, $context );
 	}
 
@@ -872,7 +875,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		while ( $sel ) {
 			if ( preg_match( self::$rules->qname, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
-				$qname = $cap[ 1 ];
+				$qname = self::decodeid( $cap[ 1 ] );
 				$buff[] = $this->tokQname( $qname );
 			} elseif ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
@@ -950,7 +953,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		if ( $cap === '*' ) {
 			return $this->selectors0['*'];
 		} else {
-			return $this->selectors1['type']( self::decodeid( $cap ) );
+			return $this->selectors1['type']( $cap );
 		}
 	}
 
