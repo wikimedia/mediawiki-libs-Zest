@@ -76,6 +76,15 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return $nodeType === 1 || $nodeType === 9;
 	}
 
+	private static function unichr( int $codepoint ): string {
+		if ( extension_loaded( 'intl' ) ) {
+			// @phan-suppress-next-line PhanUndeclaredClassMethod
+			return \IntlChar::chr( $codepoint );
+		} else {
+			return mb_chr( $codepoint, "utf-8" );
+		}
+	}
+
 	private static function unquote( string $str ): string {
 		if ( !$str ) {
 			return $str;
@@ -98,7 +107,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					return ''; /* escaped newlines are ignored in strings. */
 				}
 				$cp = intval( $m[ 1 ], 16 );
-				return \IntlChar::chr( $cp );
+				return self::unichr( $cp );
 			}, $str );
 		} elseif ( preg_match( self::$rules->ident, $str ) ) {
 			return self::decodeid( $str );
@@ -115,7 +124,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return $s[ 1 ];
 			}
 			$cp = intval( $m[ 1 ], 16 );
-			return \IntlChar::chr( $cp );
+			return self::unichr( $cp );
 		}, $str );
 	}
 
