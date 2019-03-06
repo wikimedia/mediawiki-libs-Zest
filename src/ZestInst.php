@@ -1152,7 +1152,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				$test = $this->compile( $test->sel );
 				$scope = self::getElementsByTagName( $node, $test->qname );
 				foreach ( $scope as $el ) {
-					if ( call_user_func( $test->func, $el ) && !in_array( $el, $results ) ) {
+					if ( call_user_func( $test->func, $el ) && !in_array( $el, $results, true ) ) {
 						$results[] = $el;
 					}
 				}
