@@ -16,14 +16,44 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	/**
 	 * @dataProvider findProvider
 	 */
-	public function testFind( string $selector, array $expectedList ) {
+	public function testFindRemex( string $selector, array $expectedList ) {
 		$doc = self::loadHTML( __DIR__ . "/index.html" );
 		$matches = Zest::find( $selector, $doc );
-		$this->assertSame( count( $matches ), count( $expectedList ) );
-
-		foreach ( $matches as $m ) {
-			$path = self::toXPath( $m );
-			$this->assertContains( $path, $expectedList );
+		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
+		foreach ( $matchesList as $m ) {
+			$this->assertContains( $m, $expectedList );
+		}
+		foreach ( $expectedList as $e ) {
+			$this->assertContains( $e, $matchesList );
+		}
+		if ( count( $expectedList ) === 0 ) {
+			// Just ensure there's at least one assertion to keep the test
+			// runner happy, even if the selector isn't expected to match
+			// anything. (This assertion is guaranteed to pass.)
+			$this->assertSame( count( $matches ), 0 );
+		}
+	}
+	/**
+	 * @dataProvider findProvider
+	 */
+	public function testFindDOM( string $selector, array $expectedList ) {
+		$doc = new DOMDocument;
+		$html = file_get_contents( __DIR__ . "/index.html" );
+		$html = mb_convert_encoding( $html, "HTML-ENTITIES", "utf-8" );
+		$doc->loadHTML( $html, LIBXML_NOERROR );
+		$matches = Zest::find( $selector, $doc );
+		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
+		foreach ( $matchesList as $m ) {
+			$this->assertContains( $m, $expectedList );
+		}
+		foreach ( $expectedList as $e ) {
+			$this->assertContains( $e, $matchesList );
+		}
+		if ( count( $expectedList ) === 0 ) {
+			// Just ensure there's at least one assertion to keep the test
+			// runner happy, even if the selector isn't expected to match
+			// anything. (This assertion is guaranteed to pass.)
+			$this->assertSame( count( $matches ), 0 );
 		}
 	}
 	public function findProvider() {
@@ -77,6 +107,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ '#\\a9', [ '/html[1]/body[1]/footer[1]/small[1]/a[1]' ] ],
 			// The comma combinator
 			[ '#\\00a9, article p', [ '/html[1]/body[1]/footer[1]/small[1]/a[1]', "/html[1]/body[1]/article[1]/p[1]" ] ],
+			[ 'article > header, header + p', [ "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/p[1]" ] ],
 		];
 	}
 

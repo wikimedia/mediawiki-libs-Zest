@@ -73,8 +73,12 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		if ( !$n->parentNode ) { return false;
   }
 		$nodeType = $n->parentNode->nodeType;
-		// The root `html` element can be a first- or last-child, too.
-		return $nodeType === 1 || $nodeType === 9;
+		// The root `html` element (node type 9) can be a first- or
+		// last-child, too.  But in PHP, if you load a document with
+		// DOMDocument::loadHTML, your root DOMDocument will have node
+		// type 13 (!) which is PHP's bespoke "XML_HTML_DOCUMENT_NODE"
+		// and Not A Real Thing.  But we'll recognize it anyway...
+		return $nodeType === 1 || $nodeType === 9 || $nodeType === 13;
 	}
 
 	private static function unichr( int $codepoint ): string {
