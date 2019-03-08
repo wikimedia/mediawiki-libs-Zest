@@ -1,6 +1,6 @@
 {
 	"name": "wikimedia/zest",
-	"description": "Fast, lightweight, extensible CSS selector engine for PHP.",
+	"description": "Fast, lightweight, extensible CSS selector engine for PHP",
 	"keywords": ["css", "selector", "engine"],
 	"license": "MIT",
 	"homepage": "https://www.mediawiki.org/wiki/Zest",
