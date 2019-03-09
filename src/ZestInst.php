@@ -242,7 +242,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		}
 		$xpath = new \DOMXPath( $doc );
 		$quotedClassName = self::xpathQuote( " $className " );
-		$query = ".//*[contains(concat(' ', @class, ' '), $quotedClassName)]";
+		$query = ".//*[contains(concat(' ', normalize-space(@class), ' '), $quotedClassName)]";
 		return $xpath->query( $query, $context );
 	}
 
