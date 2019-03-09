@@ -2,6 +2,7 @@
 
 namespace Wikimedia\Zest\Tests;
 
+use Wikimedia\TestingAccessWrapper;
 use Wikimedia\Zest\ZestInst;
 
 use \DOMDocument as DOMDocument;
@@ -25,8 +26,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	 * @dataProvider unquoteProvider
 	 */
 	public function testUnquote( $given, $expected ) {
-		$unquote = self::getPrivateMethod( ZestInst::class, 'unquote' );
-		$var = $unquote->invoke( null, $given );
+		$var = TestingAccessWrapper::newFromClass( ZestInst::class )->unquote( $given );
 		$this->assertSame( $var, $expected );
 	}
 	public function unquoteProvider() {
@@ -42,8 +42,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	 * @dataProvider parseNthProvider
 	 */
 	public function testParseNth( $given, $group, $offset ) {
-		$unquote = self::getPrivateMethod( ZestInst::class, 'parseNth' );
-		$res = $unquote->invoke( null, $given );
+		$res = TestingAccessWrapper::newFromClass( ZestInst::class )->parseNth( $given );
 		$this->assertSame( $res->group, $group );
 		$this->assertSame( $res->offset, $offset );
 	}
@@ -92,22 +91,5 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	}
 	public static function loadHtml( string $filename ) : DOMDocument {
 		return ZestTest::loadHtml( $filename );
-	}
-
-	/**
-	 * Get a private or protected method for testing/documentation purposes.
-	 * How to use for MyClass->foo():
-	 *      $cls = new MyClass();
-	 *      $foo = PHPUnitUtil::getPrivateMethod($cls, 'foo');
-	 *      $foo->invoke($cls, $...);
-	 * @param object $obj The instantiated instance of your class
-	 * @param string $name The name of your private/protected method
-	 * @return \ReflectionMethod The method you asked for
-	 */
-	public static function getPrivateMethod( $obj, $name ) {
-		$class = new \ReflectionClass( $obj );
-		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
-		return $method;
 	}
 }
