@@ -1,5 +1,5 @@
 {
-	"name": "wikimedia/zest",
+	"name": "wikimedia/zest-css",
 	"description": "Fast, lightweight, extensible CSS selector engine for PHP",
 	"keywords": ["css", "selector", "engine"],
 	"license": "MIT",
