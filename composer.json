@@ -30,7 +30,7 @@
 		"ockcyp/covers-validator": "0.5.1 || 0.6.1",
 		"phan/phan": "^1.2",
 		"phpunit/phpunit": "^6.5",
-		"wikimedia/remex-html": "2.0.1",
+		"wikimedia/remex-html": "2.0.2",
 		"wikimedia/testing-access-wrapper": "~1.0"
 	},
 	"autoload": {

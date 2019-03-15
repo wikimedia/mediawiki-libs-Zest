@@ -187,18 +187,20 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		}
 		return self::toXPath( $parent ) . "/" . $name . "[$count]";
 	}
-	public static function loadHtml( string $filename ) : DOMDocument {
+	public static function loadHtml( string $filename, $options = [] ) : DOMDocument {
 		$text = file_get_contents( $filename );
-		return self::parseHtml( $text );
+		return self::parseHtml( $text, $options );
 	}
 
-	public static function parseHtml( string $text ) : DOMDocument {
-		$domBuilder = new DOM\DOMBuilder;
+	public static function parseHtml( string $text, $options = [] ) : DOMDocument {
+		$domBuilder = new DOM\DOMBuilder( $options + [
+			/* DOM builder options  */
+		] );
 		$treeBuilder = new TreeBuilder\TreeBuilder( $domBuilder, [
 			/* tree builder options */
 		] );
 		$dispatcher = new TreeBuilder\Dispatcher( $treeBuilder );
-		$tokenizer = new Tokenizer\Tokenizer( $dispatcher, $text, [
+		$tokenizer = new Tokenizer\Tokenizer( $dispatcher, $text, $options + [
 			/* tokenizer options */
 		] );
 		$tokenizer->execute( [
