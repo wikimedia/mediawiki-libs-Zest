@@ -172,7 +172,17 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		}
 	}
 
-	private static function getElementsById( DOMNode $context, string $id ): array {
+	/**
+	 * Get descendants by ID.
+	 * The PHP DOM doesn't provide this method for DOMElement, and the
+	 * implementation in DOMDocument is broken.
+	 *
+	 * @param DOMDocument|DOMElement $context
+	 * @param string $id
+	 * @return array A list of the elements with the given ID. When there are more
+	 *   than one, this method might return all of them or only the first one.
+	 */
+	public static function getElementsById( DOMNode $context, string $id ): array {
 		$doc = ( $context instanceof \DOMDocument ) ?
 			$context : $context->ownerDocument;
 		// PHP doesn't provide an DOMElement-scoped version of
@@ -207,7 +217,16 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		return iterator_to_array( $xpath->query( $query, $context ) );
 	}
 
-	private static function getElementsByTagName( DOMNode $context, string $tagName ): DOMNodeList {
+	/**
+	 * Get descendants by tag name.
+	 * The PHP DOM doesn't provide this method for DOMElement, and the
+	 * implementation in DOMDocument has performance issues.
+	 *
+	 * @param DOMDocument|DOMElement $context
+	 * @param string $tagName
+	 * @return DOMNodeList
+	 */
+	public static function getElementsByTagName( DOMNode $context, string $tagName ): DOMNodeList {
 		// This *should* just be a call to PHP's `getElementByTagName`
 		// function *BUT* PHP's implementation is 100x slower than using
 		// XPath to get the same results (!)

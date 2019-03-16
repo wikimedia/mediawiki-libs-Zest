@@ -5,6 +5,7 @@ namespace Wikimedia\Zest;
 use \DOMDocument as DOMDocument;
 use \DOMElement as DOMElement;
 use \DOMNode as DOMNode;
+use \DOMNodeList as DOMNodeList;
 
 /**
  * Zest.php (https://github.com/wikimedia/zest.php)
@@ -47,4 +48,32 @@ class Zest {
 	public static function matches( DOMNode $el, string $sel ): bool {
 		return self::singleton()->matches( $el, $sel );
 	}
+
+	/**
+	 * Get descendants by ID.
+	 * The PHP DOM doesn't provide this method for DOMElement, and the
+	 * implementation in DOMDocument is broken.
+	 *
+	 * @param DOMDocument|DOMElement $context
+	 * @param string $id
+	 * @return array A list of the elements with the given ID. When there are more
+	 *   than one, this method might return all of them or only the first one.
+	 */
+	public static function getElementsById( DOMNode $context, string $id ): array {
+		return ZestInst::getElementsById( $context, $id );
+	}
+
+	/**
+	 * Get descendants by tag name.
+	 * The PHP DOM doesn't provide this method for DOMElement, and the
+	 * implementation in DOMDocument has performance issues.
+	 *
+	 * @param DOMDocument|DOMElement $context
+	 * @param string $tagName
+	 * @return DOMNodeList
+	 */
+	public static function getElementsByTagName( DOMNode $context, string $tagName ): DOMNodeList {
+		return ZestInst::getElementsByTagName( $context, $tagName );
+	}
+
 }
