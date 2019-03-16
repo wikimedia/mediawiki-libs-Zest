@@ -2,10 +2,10 @@
 
 namespace Wikimedia\Zest;
 
-use \DOMDocument as DOMDocument;
-use \DOMElement as DOMElement;
-use \DOMNode as DOMNode;
-use \DOMNodeList as DOMNodeList;
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMNodeList;
 
 /**
  * Zest.php (https://github.com/wikimedia/zest.php)

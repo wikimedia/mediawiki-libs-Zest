@@ -2,14 +2,12 @@
 
 namespace Wikimedia\Zest\Tests;
 
-use Wikimedia\Zest\Zest;
-
-use \DOMDocument as DOMDocument;
-use \DOMNode as DOMNode;
-
+use DOMDocument;
+use DOMNode;
 use RemexHtml\DOM;
 use RemexHtml\Tokenizer;
 use RemexHtml\TreeBuilder;
+use Wikimedia\Zest\Zest;
 
 class ZestTest extends \PHPUnit\Framework\TestCase {
 

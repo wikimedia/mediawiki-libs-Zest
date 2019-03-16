@@ -2,7 +2,7 @@
 
 namespace Wikimedia\Zest;
 
-use \DOMNode as DOMNode;
+use DOMNode;
 
 class ZestFunc {
 	/** @var callable(DOMNode):bool */

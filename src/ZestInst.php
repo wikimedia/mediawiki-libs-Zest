@@ -2,13 +2,12 @@
 
 namespace Wikimedia\Zest;
 
-use \DOMDocument as DOMDocument;
-use \DOMElement as DOMElement;
-use \DOMNode as DOMNode;
-use \DOMNodeList as DOMNodeList;
-
-use \Error as Error;
-use \InvalidArgumentException as InvalidArgumentException;
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMNodeList;
+use Error;
+use InvalidArgumentException;
 
 /**
  * Zest.php (https://github.com/wikimedia/zest.php)

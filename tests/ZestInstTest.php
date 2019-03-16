@@ -2,11 +2,10 @@
 
 namespace Wikimedia\Zest\Tests;
 
+use DOMDocument;
+use DOMNode;
 use Wikimedia\TestingAccessWrapper;
 use Wikimedia\Zest\ZestInst;
-
-use \DOMDocument as DOMDocument;
-use \DOMNode as DOMNode;
 
 class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	/**
