@@ -19,24 +19,45 @@ $els = Zest::find('section! > div[title="hello" i] > :local-link /href/ h1', $do
 ```
 
 ## Install
+This package is [available on Packagist](https://packagist.org/packages/wikimedia/zest-css):
 
 ```bash
-$ composer install wikimedia/zest
+$ composer require wikimedia/zest-css
 ```
 
 ## API
 
-`Zest::find( $selector, $context )` -> this is equivalent to the standard
+
+#### `Zest::find( string $selector, DOMNode $context ): array`</dt>
+This is equivalent to the standard
 DOM method [`ParentNode#querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/querySelectorAll).
 
-`Zest::matches( $element, $selector )` -> this is equivalent to the standard
+#### `Zest::matches( DOMNode $element, string $selector ): bool`
+This is equivalent to the standard
 DOM method [`Element#matches()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/matches).
+
+Since the PHP implementations of
+[`DOMDocument::getElementById`](http://php.net/manual/en/domdocument.getelementbyid.php)
+and
+[`DOMDocument#getElementsByTagName`](http://php.net/manual/en/domdocument.getelementsbytagname.php)
+have some performance and spec-compliance issues, Zest also exports useful
+performant and correct versions of these:
+
+#### `Zest::getElementsById( DOMNode $contextNode, string $id ): array`
+This is equivalent to the standard DOM method
+[`Document#getElementById()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementById)
+(although you can use any context node, not just the top-level document).
+
+#### `Zest::getElementsByTagName( DOMNode $contextNode, string $tagName ): DOMNodeList`
+This is equivalent to the standard DOM method [`Element#getElementsByTagName()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName).
 
 ## Extension
 
 It is possible to add your own selectors, operators, or combinators.
-These are added to an instance of Zest, so they don't affect other instances
-of Zest or the static `Zest::find`/`Zest::matches` methods.
+These are added to an instance of `ZestInst`, so they don't affect other
+instances of Zest or the static `Zest::find`/`Zest::matches` methods.
+The `ZestInst` class has non-static versions of all the static methods
+available on `Zest`.
 
 ### Adding a simple selector
 
@@ -58,6 +79,9 @@ $z->addSelector1( ':name', function( string $param ):callable {
     return false;
   };
 } );
+
+// Use it!
+$z->find( 'h1:name(foo)', $document );
 ```
 
 __NOTE__: if your pseudo-class does not take a parameter, use `addSelector0`.
@@ -71,6 +95,9 @@ $z = new ZestInst;
 $z->addOperator( '!=', function( string $attr, string $val ):bool {
   return $attr !== $val;
 } );
+
+// Use it!
+$z->find( 'h1[name != "foo"]', $document );
 ```
 
 ### Adding a combinator
@@ -97,6 +124,9 @@ $z->addCombinator( '<', function( callable $test ): callable {
     return null;
   };
 } );
+
+// Use it!
+$z->find( 'h1 < section', $document );
 ```
 
 The `$test` function tests whatever simple selectors it needs to look for, but
@@ -115,8 +145,8 @@ $ composer test
 The original zest codebase is
 (c) Copyright 2011-2012, Christopher Jeffrey.
 
-The port to PHP is
-(c) Copyright 2019, C. Scott Ananian.
+The port to PHP was initially done by C. Scott Ananian and is
+(c) Copyright 2019 Wikimedia Foundation.
 
 Both the original zest codebase and this port are distributed under
 the MIT license; see LICENSE for more info.
