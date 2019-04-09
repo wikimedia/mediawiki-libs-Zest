@@ -52,6 +52,10 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 			[ '+3n+45', 3, 45 ],
 			[ '-3n-45', -3, -45 ],
 			[ '-2n+1', -2, 1 ],
+			[ '1', 0, 1 ],
+			[ '-1', 0, -1 ],
+			[ '0n2', 0, 2 ],
+			[ '-0n-2', 0, -2 ],
 		];
 	}
 

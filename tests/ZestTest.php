@@ -96,6 +96,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ "html:nth-of-type(2)", [] ],
 			[ "html:nth-last-of-type(1)", [ '/html[1]' ] ],
 			[ "html:nth-last-of-type(2)", [] ],
+			// The :nth-child selector
+			[ "body > *:first-child", [ '/html[1]/body[1]/header[1]' ] ],
+			[ "body > *:nth-child(1)", [ '/html[1]/body[1]/header[1]' ] ],
 			// The :contains selector
 			[ 'header:contains("A Date")', [ '/html[1]/body[1]/article[1]/header[1]' ] ],
 			// The :has selector

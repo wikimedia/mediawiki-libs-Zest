@@ -282,10 +282,10 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			$param = '0n' . $param;
 		}
 
-		preg_match( '/^([+-])?(\d+)?n([+-])?(\d+)?$/', $param, $cap );
+		preg_match( '/^([+-])?(\d+)?n([+-])?(\d+)?$/', $param, $cap, PREG_UNMATCHED_AS_NULL );
 
-		$group = intval( ( $cap[1] ?: '' ) . ( $cap[2] ?: '1' ), 10 );
-		$offset = intval( ( $cap[3] ?: '' ) . ( $cap[4] ?: '0' ), 10 );
+		$group = intval( ( $cap[1] ?? '' ) . ( $cap[2] ?? '1' ), 10 );
+		$offset = intval( ( $cap[3] ?? '' ) . ( $cap[4] ?? '0' ), 10 );
 		return (object)[
 			'group' => $group,
 			'offset' => $offset,
