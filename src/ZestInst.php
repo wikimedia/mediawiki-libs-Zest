@@ -1155,6 +1155,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 */
 
 	// $node should be a DOMDocument or a DOMElement
+
 	/** @param DOMDocument|DOMElement $node */
 	private function findInternal( string $sel, DOMNode $node ): array {
 		$results = [];

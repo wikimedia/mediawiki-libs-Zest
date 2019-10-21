@@ -28,6 +28,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$var = TestingAccessWrapper::newFromClass( ZestInst::class )->unquote( $given );
 		$this->assertSame( $var, $expected );
 	}
+
 	public function unquoteProvider() {
 		return [
 			[ 'foo', 'foo' ],
@@ -45,6 +46,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $res->group, $group );
 		$this->assertSame( $res->offset, $offset );
 	}
+
 	public function parseNthProvider() {
 		return [
 			[ 'even', 2, 0 ],
@@ -99,6 +101,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	public static function toXPath( DOMNode $node ) {
 		return ZestTest::toXPath( $node );
 	}
+
 	public static function loadHtml( string $filename ) : DOMDocument {
 		return ZestTest::loadHtml( $filename );
 	}

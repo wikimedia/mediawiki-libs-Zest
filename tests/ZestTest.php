@@ -31,6 +31,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			$this->assertSame( count( $matches ), 0 );
 		}
 	}
+
 	/**
 	 * @dataProvider findProvider
 	 */
@@ -54,6 +55,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			$this->assertSame( count( $matches ), 0 );
 		}
 	}
+
 	public function findProvider() {
 		return [
 			[ "body > header > h1", [ "/html[1]/body[1]/header[1]/h1[1]" ] ],
@@ -188,6 +190,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		}
 		return self::toXPath( $parent ) . "/" . $name . "[$count]";
 	}
+
 	public static function loadHtml( string $filename, $options = [] ) : DOMDocument {
 		$text = file_get_contents( $filename );
 		return self::parseHtml( $text, $options );
