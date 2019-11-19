@@ -1046,7 +1046,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		// attr value
 		if ( $cap[ 4 ] ) {
 			$value = $cap[ 6 ] ?? '';
-			$i = preg_match( "/[\"'\\s]\\s*I\$/", $value );
+			$i = preg_match( "/[\"'\\s]\\s*I\$/i", $value );
 			if ( $i ) {
 				$value = preg_replace( '/\s*I$/i', '', $value, 1 );
 			}

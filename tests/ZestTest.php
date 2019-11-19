@@ -111,6 +111,8 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			// The comma combinator
 			[ '#\\00a9, article p', [ '/html[1]/body[1]/footer[1]/small[1]/a[1]', "/html[1]/body[1]/article[1]/p[1]" ] ],
 			[ 'article > header, header + p', [ "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/p[1]" ] ],
+			// Case insensitive attribute value matching
+			[ 'input[value="submit"i]', [ '/html[1]/body[1]/footer[1]/form[1]/input[2]' ] ],
 		];
 	}
 
