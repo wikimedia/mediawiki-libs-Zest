@@ -861,7 +861,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			}
 
 			$attr = $node->getAttribute( $name ) ?: '';
-			if ( $attr[ 0 ] === '#' ) {
+			if ( $attr !== '' && $attr[ 0 ] === '#' ) {
 				$attr = substr( $attr, 1 );
 			}
 
