@@ -33,7 +33,7 @@
 		"mediawiki/minus-x": "1.0.0",
 		"ockcyp/covers-validator": "1.1.1",
 		"phpunit/phpunit": "^8.5",
-		"wikimedia/remex-html": "2.0.2",
+		"wikimedia/remex-html": "2.2.0",
 		"wikimedia/testing-access-wrapper": "~1.0"
 	},
 	"autoload": {
