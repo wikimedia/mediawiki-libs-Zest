@@ -70,7 +70,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 	private static function parentIsElement( DOMNode $n ): bool {
 		if ( !$n->parentNode ) { return false;
-  }
+		}
 		$nodeType = $n->parentNode->nodeType;
 		// The root `html` element (node type 9) can be a first- or
 		// last-child, too.  But in PHP, if you load a document with
