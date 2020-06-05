@@ -1156,7 +1156,6 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private function findInternal( string $sel, DOMNode $node ): array {
 		$results = [];
 		$test = $this->compile( $sel );
-		// @phan-suppress-next-line PhanTypeMismatchArgumentNullable
 		$scope = self::getElementsByTagName( $node, $test->qname );
 		$i = 0;
 		$el = null;
@@ -1169,9 +1168,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 
 		if ( $test->sel ) {
 			while ( $test->sel ) {
-				// @phan-suppress-next-line PhanTypeMismatchArgumentNullable
 				$test = $this->compile( $test->sel );
-				// @phan-suppress-next-line PhanTypeMismatchArgumentNullable
 				$scope = self::getElementsByTagName( $node, $test->qname );
 				foreach ( $scope as $el ) {
 					if ( call_user_func( $test->func, $el ) && !in_array( $el, $results, true ) ) {
