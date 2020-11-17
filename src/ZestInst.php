@@ -95,7 +95,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		self::initRules();
 		$ch = $str[ 0 ];
 		if ( $ch === '"' || $ch === "'" ) {
-			if ( substr( $str, - 1 ) === $ch ) {
+			if ( substr( $str, -1 ) === $ch ) {
 				$str = substr( $str, 1, -1 );
 			} else {
 				// bad string.
@@ -311,9 +311,9 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				}
 				if ( $rel === $el ) {
 					$pos -= $offset;
-					return ( $group && $pos ) ?
-						( $pos % $group ) === 0 && ( $pos < 0 === $group < 0 ) :
-						!$pos;
+					return ( $group && $pos )
+						? ( $pos % $group ) === 0 && ( ( $pos < 0 ) === ( $group < 0 ) )
+						: !$pos;
 				}
 				$rel = call_user_func( $advance, $rel );
 			}
@@ -879,6 +879,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 * Grammar
 	 */
 
+	/** @var \stdClass */
 	private static $rules;
 
 	public static function initRules() {
