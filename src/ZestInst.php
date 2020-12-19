@@ -101,6 +101,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				// bad string.
 				$str = substr( $str, 1 );
 			}
+			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			return preg_replace_callback( self::$rules->str_escape, function ( array $matches ) {
 				$s = $matches[0];
 				if ( !preg_match( '/^\\\(?:([0-9A-Fa-f]+)|([\r\n\f]+))/', $s, $m ) ) {
@@ -112,6 +113,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				$cp = intval( $m[ 1 ], 16 );
 				return self::unichr( $cp );
 			}, $str );
+			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 		} elseif ( preg_match( self::$rules->ident, $str ) ) {
 			return self::decodeid( $str );
 		} else {
@@ -121,6 +123,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	}
 
 	private static function decodeid( string $str ): string {
+		// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 		return preg_replace_callback( self::$rules->escape, function ( array $matches ) {
 			$s = $matches[0];
 			if ( !preg_match( '/^\\\([0-9A-Fa-f]+)/', $s, $m ) ) {
@@ -692,7 +695,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			if ( $attr == null ) {
 				return false;
 			}
-			$attr = $attr . '';
+			$attr .= '';
 			if ( $i ) {
 				$attr = strtolower( $attr );
 				$val = strtolower( $val );
@@ -929,10 +932,12 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$ref = null;
 
 		while ( $sel ) {
+			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->qname, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = self::decodeid( $cap[ 1 ] );
 				$buff[] = $this->tokQname( $qname );
+				// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			} elseif ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = '*';
@@ -942,6 +947,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				throw new InvalidArgumentException( 'Invalid selector.' );
 			}
 
+			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			while ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$buff[] = $this->tok( $cap );
@@ -954,6 +960,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				$buff[] = $subject->simple;
 			}
 
+			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->ref, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$ref = self::makeRef( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
@@ -962,6 +969,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				continue;
 			}
 
+			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->combinator, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$op = $cap[ 1 ] ?? $cap[ 2 ] ?? $cap[ 3 ];
