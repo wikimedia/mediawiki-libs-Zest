@@ -1,4 +1,6 @@
 # zest-css x.x.x (not yet released)
+* Strip strict type checks from API so this library can be used with
+  3rd-party DOM implementations
 
 # zest-css 1.1.4 (2021-01-29)
 * Dependency updates
