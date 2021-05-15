@@ -67,7 +67,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$z0 = new ZestInst;
 		// Verify that we can create a custom selector
 		$z1 = new ZestInst;
-		$z1->addSelector0( ':zesttest', function ( DOMNode $el ):bool {
+		$z1->addSelector0( ':zesttest', static function ( DOMNode $el ):bool {
 			return strtolower( $el->nodeName ) === 'footer' &&
 				strtolower( $el->parentNode->nodeName ) === 'article';
 		} );

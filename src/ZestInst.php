@@ -194,7 +194,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	private static function xpathQuote( string $s ): string {
 		// Ugly-but-functional escape mechanism for xpath query
 		$parts = explode( "'", $s );
-		$parts = array_map( function ( string $ss ) {
+		$parts = array_map( static function ( string $ss ) {
 			return "'$ss'";
 		}, $parts );
 		if ( count( $parts ) === 1 ) {
@@ -412,12 +412,12 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	}
 
 	private function initSelectors() {
-		$this->addSelector0( '*', function ( $el ): bool {
+		$this->addSelector0( '*', static function ( $el ): bool {
 			return true;
 		} );
-		$this->addSelector1( 'type', function ( string $type ): callable {
+		$this->addSelector1( 'type', static function ( string $type ): callable {
 			$type = strtolower( $type );
-			return function ( $el ) use ( $type ): bool {
+			return static function ( $el ) use ( $type ): bool {
 				return strtolower( $el->nodeName ) === $type;
 			};
 		} );
@@ -432,7 +432,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				&& self::parentIsElement( $el );
 		} );
 		$this->addSelector1( ':nth-child', function ( string $param, bool $last = false ): callable {
-			return self::nth( $param, function ( $ignore1, $ignore2 ) {
+			return self::nth( $param, static function ( $ignore1, $ignore2 ) {
 				return true;
 			}, $last );
 		} );
@@ -440,15 +440,15 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$this->addSelector1( ':nth-last-child', function ( string $param ): callable {
 			return $this->selectors1[ ':nth-child' ]( $param, true );
 		} );
-		$this->addSelector0( ':root', function ( $el ): bool {
+		$this->addSelector0( ':root', static function ( $el ): bool {
 			return $el->ownerDocument->documentElement === $el;
 		} );
-		$this->addSelector0( ':empty', function ( $el ): bool {
+		$this->addSelector0( ':empty', static function ( $el ): bool {
 			return !$el->firstChild;
 		} );
 		$this->addSelector1( ':not', function ( string $sel ) {
 			$test = self::compileGroup( $sel );
-			return function ( $el ) use ( $test ): bool {
+			return static function ( $el ) use ( $test ): bool {
 				return !call_user_func( $test, $el );
 			};
 		} );
@@ -481,7 +481,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				$this->selectors0[ ':last-of-type' ]( $el );
 		} );
 		$this->addSelector1( ':nth-of-type', function ( string $param, bool $last = false ): callable  {
-			return self::nth( $param, function ( $rel, $el ) {
+			return self::nth( $param, static function ( $rel, $el ) {
 				return $rel->nodeName === $el->nodeName;
 			}, $last );
 		} );
@@ -489,7 +489,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$this->addSelector1( ':nth-last-of-type', function ( string $param ): callable {
 			return $this->selectors1[ ':nth-of-type' ]( $param, true );
 		} );
-		$this->addSelector0( ':checked', function ( $el ): bool {
+		$this->addSelector0( ':checked', static function ( $el ): bool {
 			'@phan-var DOMElement $el';
 			// XXX these properties don't exist in the PHP DOM
 			// return $el->checked || $el->selected;
@@ -498,13 +498,13 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$this->addSelector0( ':indeterminate', function ( $el ): bool {
 			return !$this->selectors0[ ':checked' ]( $el );
 		} );
-		$this->addSelector0( ':enabled', function ( $el ): bool {
+		$this->addSelector0( ':enabled', static function ( $el ): bool {
 			'@phan-var DOMElement $el';
 			// XXX these properties don't exist in the PHP DOM
 			// return !$el->disabled && $el->type !== 'hidden';
 			return !$el->hasAttribute( 'disabled' ) && $el->getAttribute( 'type' ) !== 'hidden';
 		} );
-		$this->addSelector0( ':disabled', function ( $el ): bool {
+		$this->addSelector0( ':disabled', static function ( $el ): bool {
 			'@phan-var DOMElement $el';
 			// XXX these properties don't exist in the PHP DOM
 			// return !!$el->disabled;
@@ -542,8 +542,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			return $el . '' === $window->location . '';
 		});
 		*/
-		$this->addSelector1( ':lang', function ( string $param ): callable {
-			return function ( $el ) use ( $param ): bool {
+		$this->addSelector1( ':lang', static function ( string $param ): callable {
+			return static function ( $el ) use ( $param ): bool {
 				'@phan-var DOMElement $el';
 				while ( $el ) {
 					// PHP DOM doesn't have 'lang' property
@@ -556,8 +556,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return false;
 			};
 		} );
-		$this->addSelector1( ':dir', function ( string $param ): callable {
-			return function ( $el ) use ( $param ): bool {
+		$this->addSelector1( ':dir', static function ( string $param ): callable {
+			return static function ( $el ) use ( $param ): bool {
 				'@phan-var DOMElement $el';
 				while ( $el ) {
 					$dir = $el->getAttribute( 'dir' );
@@ -613,14 +613,14 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$this->addSelector0( ':out-of-range', function ( $el ): bool {
 			return !$this->selectors0[ ':in-range' ]( $el );
 		} );
-		$this->addSelector0( ':required', function ( $el ): bool {
+		$this->addSelector0( ':required', static function ( $el ): bool {
 			'@phan-var DOMElement $el';
 			return $el->hasAttribute( 'required' );
 		} );
 		$this->addSelector0( ':optional', function ( $el ): bool {
 			return !$this->selectors0[ ':required' ]( $el );
 		} );
-		$this->addSelector0( ':read-only', function ( $el ): bool {
+		$this->addSelector0( ':read-only', static function ( $el ): bool {
 			'@phan-var DOMElement $el';
 			if ( $el->hasAttribute( 'readOnly' ) ) {
 				return true;
@@ -636,39 +636,39 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		$this->addSelector0( ':read-write', function ( $el ): bool {
 			return !$this->selectors0[ ':read-only' ]( $el );
 		} );
-		$this->addSelector0( ':hover', function ( $el ): bool {
+		$this->addSelector0( ':hover', static function ( $el ): bool {
 			throw new Error( ':hover is not supported.' );
 		} );
-		$this->addSelector0( ':active', function ( $el ): bool {
+		$this->addSelector0( ':active', static function ( $el ): bool {
 			throw new Error( ':active is not supported.' );
 		} );
-		$this->addSelector0( ':link', function ( $el ): bool {
+		$this->addSelector0( ':link', static function ( $el ): bool {
 			throw new Error( ':link is not supported.' );
 		} );
-		$this->addSelector0( ':visited', function ( $el ): bool {
+		$this->addSelector0( ':visited', static function ( $el ): bool {
 			throw new Error( ':visited is not supported.' );
 		} );
-		$this->addSelector0( ':column', function ( $el ): bool {
+		$this->addSelector0( ':column', static function ( $el ): bool {
 			throw new Error( ':column is not supported.' );
 		} );
-		$this->addSelector0( ':nth-column', function ( $el ): bool {
+		$this->addSelector0( ':nth-column', static function ( $el ): bool {
 			throw new Error( ':nth-column is not supported.' );
 		} );
-		$this->addSelector0( ':nth-last-column', function ( $el ): bool {
+		$this->addSelector0( ':nth-last-column', static function ( $el ): bool {
 			throw new Error( ':nth-last-column is not supported.' );
 		} );
-		$this->addSelector0( ':current', function ( $el ): bool {
+		$this->addSelector0( ':current', static function ( $el ): bool {
 			throw new Error( ':current is not supported.' );
 		} );
-		$this->addSelector0( ':past', function ( $el ): bool {
+		$this->addSelector0( ':past', static function ( $el ): bool {
 			throw new Error( ':past is not supported.' );
 		} );
-		$this->addSelector0( ':future', function ( $el ): bool {
+		$this->addSelector0( ':future', static function ( $el ): bool {
 			throw new Error( ':future is not supported.' );
 		} );
 		// Non-standard, for compatibility purposes.
-		$this->addSelector1( ':contains', function ( string $param ): callable {
-			return function ( $el ) use ( $param ): bool {
+		$this->addSelector1( ':contains', static function ( string $param ): callable {
+			return static function ( $el ) use ( $param ): bool {
 				$text = $el->textContent;
 				return strpos( $text, $param ) !== false;
 			};
@@ -687,7 +687,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	/** @return callable(DOMNode):bool */
 	private function selectorsAttr( string $key, string $op, string $val, bool $i ): callable {
 		$op = $this->operators[ $op ];
-		return function ( $el ) use ( $key, $i, $op, $val ): bool {
+		return static function ( $el ) use ( $key, $i, $op, $val ): bool {
 			/* XXX: the below all assumes a more complete PHP DOM than we have
 			switch ( $key ) {
 			#case 'for':
@@ -775,16 +775,16 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	}
 
 	private function initOperators() {
-		$this->addOperator( '-', function ( string $attr, string $val ): bool {
+		$this->addOperator( '-', static function ( string $attr, string $val ): bool {
 			return true;
 		} );
-		$this->addOperator( '=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '=', static function ( string $attr, string $val ): bool {
 			return $attr === $val;
 		} );
-		$this->addOperator( '*=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '*=', static function ( string $attr, string $val ): bool {
 			return strpos( $attr, $val ) !== false;
 		} );
-		$this->addOperator( '~=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '~=', static function ( string $attr, string $val ): bool {
 			$attrLen = strlen( $attr );
 			$valLen = strlen( $val );
 			for ( $s = 0;  $s < $attrLen;  $s = $i + 1 ) {
@@ -801,7 +801,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			}
 			return false;
 		} );
-		$this->addOperator( '|=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '|=', static function ( string $attr, string $val ): bool {
 			$i = strpos( $attr, $val );
 			if ( $i !== 0 ) {
 				return false;
@@ -813,15 +813,15 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			$l = $attr[ $j ];
 			return $l === '-';
 		} );
-		$this->addOperator( '^=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '^=', static function ( string $attr, string $val ): bool {
 			return strpos( $attr, $val ) === 0;
 		} );
-		$this->addOperator( '$=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '$=', static function ( string $attr, string $val ): bool {
 			$i = strrpos( $attr, $val );
 			return $i !== false && $i + strlen( $val ) === strlen( $attr );
 		} );
 		// non-standard
-		$this->addOperator( '!=', function ( string $attr, string $val ): bool {
+		$this->addOperator( '!=', static function ( string $attr, string $val ): bool {
 			return $attr !== $val;
 		} );
 	}
@@ -843,8 +843,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	}
 
 	private function initCombinators() {
-		$this->addCombinator( ' ', function ( callable $test ): callable {
-			return function ( $el ) use ( $test ) {
+		$this->addCombinator( ' ', static function ( callable $test ): callable {
+			return static function ( $el ) use ( $test ) {
 				while ( $el = $el->parentNode ) {
 					if ( call_user_func( $test, $el ) ) {
 						return $el;
@@ -853,8 +853,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return null;
 			};
 		} );
-		$this->addCombinator( '>', function ( callable $test ): callable {
-			return function ( $el ) use ( $test ) {
+		$this->addCombinator( '>', static function ( callable $test ): callable {
+			return static function ( $el ) use ( $test ) {
 				if ( $el = $el->parentNode ) {
 					if ( call_user_func( $test, $el ) ) {
 						return $el;
@@ -883,8 +883,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 				return null;
 			};
 		} );
-		$this->addCombinator( 'noop', function ( callable $test ): callable {
-			return function ( $el ) use ( $test ) {
+		$this->addCombinator( 'noop', static function ( callable $test ): callable {
+			return static function ( $el ) use ( $test ) {
 				if ( call_user_func( $test, $el ) ) {
 					return $el;
 				}
@@ -912,7 +912,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			return false;
 		} );
 
-		$ref->combinator = function ( $el ) use ( &$node, $name, $test ) {
+		$ref->combinator = static function ( $el ) use ( &$node, $name, $test ) {
 			if ( !$node || $node->nodeType !== 1 /* Element */ ) {
 				return null;
 			}
@@ -1128,7 +1128,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			return $func[ 0 ];
 		}
 
-		return function ( $el ) use ( $l, $func ): bool {
+		return static function ( $el ) use ( $l, $func ): bool {
 			for ( $i = 0;  $i < $l;  $i++ ) {
 				if ( !call_user_func( $func[ $i ], $el ) ) {
 					return false;
@@ -1141,11 +1141,11 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	// Returns the element that all $func return
 	private static function makeTest( array $func ): ZestFunc {
 		if ( count( $func ) < 2 ) {
-			return new ZestFunc( function ( $el ) use ( $func ): bool {
+			return new ZestFunc( static function ( $el ) use ( $func ): bool {
 				return (bool)call_user_func( $func[ 0 ], $el );
 			} );
 		}
-		return new ZestFunc( function ( $el ) use ( $func ): bool {
+		return new ZestFunc( static function ( $el ) use ( $func ): bool {
 			$i = count( $func );
 			while ( $i-- ) {
 				if ( !( $el = call_user_func( $func[ $i ], $el ) ) ) {
@@ -1175,7 +1175,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 			return false;
 		} );
 
-		$subject->simple = function ( $el ): bool {
+		$subject->simple = static function ( $el ): bool {
 			$target = $el;
 			return true;
 		};
@@ -1200,7 +1200,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 		}
 
 		// Optional "$ignore" parameter here lets this be passed to nth()
-		return function ( $el, $ignore = null ) use ( $tests ): bool {
+		return static function ( $el, $ignore = null ) use ( $tests ): bool {
 			for ( $i = 0, $l = count( $tests );  $i < $l;  $i++ ) {
 				if ( call_user_func( $tests[ $i ]->func, $el ) ) {
 					return true;
@@ -1297,7 +1297,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 * @return bool True iff the element matches the selector
 	 */
 	public function matches( $el, string $sel ): bool {
-		$test = new ZestFunc( function ( $el ):bool {
+		$test = new ZestFunc( static function ( $el ):bool {
 			return true;
 		} );
 		$test->sel = $sel;
