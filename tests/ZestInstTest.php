@@ -2,8 +2,6 @@
 
 namespace Wikimedia\Zest\Tests;
 
-use DOMDocument;
-use DOMNode;
 use Wikimedia\TestingAccessWrapper;
 use Wikimedia\Zest\ZestInst;
 
@@ -67,7 +65,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$z0 = new ZestInst;
 		// Verify that we can create a custom selector
 		$z1 = new ZestInst;
-		$z1->addSelector0( ':zesttest', static function ( DOMNode $el ):bool {
+		$z1->addSelector0( ':zesttest', static function ( $el ):bool {
 			return strtolower( $el->nodeName ) === 'footer' &&
 				strtolower( $el->parentNode->nodeName ) === 'article';
 		} );
@@ -98,11 +96,11 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 			->getElementsByClassName( $doc, 'testGetElementByClassName' )->item( 0 ) );
 	}
 
-	public static function toXPath( DOMNode $node ) {
+	public static function toXPath( $node ) {
 		return ZestTest::toXPath( $node );
 	}
 
-	public static function loadHtml( string $filename ) : DOMDocument {
+	public static function loadHtml( string $filename ) {
 		return ZestTest::loadHtml( $filename );
 	}
 }

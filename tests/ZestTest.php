@@ -3,7 +3,6 @@
 namespace Wikimedia\Zest\Tests;
 
 use DOMDocument;
-use DOMNode;
 use RemexHtml\DOM;
 use RemexHtml\Tokenizer;
 use RemexHtml\TreeBuilder;
@@ -171,19 +170,19 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		return [ [ false ], [ true ] ];
 	}
 
-	public static function toXPath( DOMNode $node ) {
+	public static function toXPath( $node ) {
 		// which child of parent is this?
 		$parent = $node->parentNode;
 		if ( !$parent ) {
 			return '';
 		}
-		$name = $node->nodeName;
+		$name = strtolower( $node->nodeName );
 		if ( $name === 'html' ) {
 			return '/html[1]';
 		}
 		$count = 0;
 		foreach ( $parent->childNodes as $n ) {
-			if ( $n->nodeName === $name ) {
+			if ( strtolower( $n->nodeName ) === $name ) {
 				$count++;
 			}
 			if ( $n === $node ) {
@@ -193,12 +192,12 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		return self::toXPath( $parent ) . "/" . $name . "[$count]";
 	}
 
-	public static function loadHtml( string $filename, $options = [] ) : DOMDocument {
+	public static function loadHtml( string $filename, $options = [] ) {
 		$text = file_get_contents( $filename );
 		return self::parseHtml( $text, $options );
 	}
 
-	public static function parseHtml( string $text, $options = [] ) : DOMDocument {
+	public static function parseHtml( string $text, $options = [] ) {
 		$domBuilder = new DOM\DOMBuilder( $options + [
 			/* DOM builder options  */
 		] );
