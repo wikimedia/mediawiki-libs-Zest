@@ -1,4 +1,5 @@
 # zest-css x.x.x (not yet released)
+* Dependency updates
 
 # zest-css 1.1.5 (2021-03-23)
 * Dependency updates
