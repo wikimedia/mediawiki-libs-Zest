@@ -26,15 +26,30 @@ class ZestInst {
 	 * Helpers
 	 */
 
-	/*
-$compareDocumentPosition = function ( $a, $b ) {
-	return $a->compareDocumentPosition( $b );
-};
-
-$order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
-	return ( $compareDocumentPosition( $a, $b ) & 2 ) ? 1 : -1;
-};
-	*/
+	/**
+	 * Sort query results in document order.
+	 * @param array &$results
+	 */
+	private static function sort( &$results ) {
+		if ( count( $results ) < 2 ) {
+			return;
+		}
+		if ( method_exists( $results[0], 'compareDocumentPosition' ) ) {
+			try {
+				// DOM spec-compliant version:
+				usort( $results, static function ( $a, $b ) {
+					return ( $a->compareDocumentPosition( $b ) & 2 ) ? 1 : -1;
+				} );
+				return;
+			} catch ( \Throwable $e ) {
+				// PHP's dom extension throws a "Not yet implemented" exception
+			}
+		}
+		// If compareDocumentPosition isn't implemented, skip the sort.
+		// Our results are generally added as a result of an in-order
+		// traversal of the tree, so absent any funny business with complex
+		// selectors, our natural order should be more-or-less sorted.
+	}
 
 	/**
 	 * @param DOMNode $el
@@ -90,7 +105,8 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 	 */
 	private static function parentIsElement( $n ): bool {
 		$parent = $n->parentNode;
-		if ( !$parent ) { return false;
+		if ( !$parent ) {
+			return false;
 		}
 		// The root `html` element (node type 9) can be a first- or
 		// last-child, too.
@@ -1244,7 +1260,7 @@ $order = function ( $a, $b ) use ( &$compareDocumentPosition ) {
 					}
 				}
 			}
-			// $results->sort( $order );//XXX
+			self::sort( $results );
 		}
 
 		return $results;

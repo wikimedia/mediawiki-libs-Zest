@@ -109,7 +109,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ "#cite_note-13\\.3F_It_Can\\'t_Be\\!-3", [ '/html[1]/body[1]/footer[1]/a[2]' ] ],
 			[ '#\\a9', [ '/html[1]/body[1]/footer[1]/small[1]/a[1]' ] ],
 			// The comma combinator
-			[ '#\\00a9, article p', [ '/html[1]/body[1]/footer[1]/small[1]/a[1]', "/html[1]/body[1]/article[1]/p[1]" ] ],
+			[ '#\\00a9, article p', [ '/html[1]/body[1]/article[1]/p[1]', '/html[1]/body[1]/footer[1]/small[1]/a[1]' ] ],
 			[ 'article > header, header + p', [ "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/p[1]" ] ],
 			// Case insensitive attribute value matching
 			[ 'input[value="submit"i]', [ '/html[1]/body[1]/footer[1]/form[1]/input[2]' ] ],

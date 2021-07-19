@@ -1,5 +1,7 @@
 # zest-css x.x.x (not yet released)
 * Dependency updates
+* Sort results in document order when DOM library implements
+  compareDocumentPosition
 
 # zest-css 1.1.5 (2021-03-23)
 * Dependency updates
