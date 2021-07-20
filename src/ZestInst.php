@@ -531,6 +531,13 @@ class ZestInst {
 				return strtolower( $el->nodeName ) === $type;
 			};
 		} );
+		$this->addSelector1( 'typeNoNS', static function ( string $type ): callable {
+			$type = strtolower( $type );
+			return static function ( $el, $opts ) use ( $type ): bool {
+				return ( $el->namespaceURI ?? '' ) === '' &&
+					strtolower( $el->nodeName ) === $type;
+			};
+		} );
 		$this->addSelector0( ':first-child', function ( $el, $opts ): bool {
 			return !self::prev( $el ) && self::parentIsElement( $el );
 		} );
@@ -1088,7 +1095,7 @@ class ZestInst {
 		'str_escape' => '/(escape)|\\\(\n|\r\n?|\f)/',
 		'nonascii' => '/[\x{00A0}-\x{FFFF}]/',
 		'cssid' => '/(?:(?!-?[0-9])(?:escape|nonascii|[-_a-zA-Z0-9])+)/',
-		'qname' => '/^ *(cssid|\*)/',
+		'qname' => '/^ *((?:\*?\|)?cssid|\*)/',
 		'simple' => '/^(?:([.#]cssid)|pseudo|attr)/',
 		'ref' => '/^ *\/(cssid)\/ */',
 		'combinator' => '/^(?: +([^ \w*.#\\\]) +|( )+|([^ \w*.#\\\]))(?! *$)/',
@@ -1134,6 +1141,12 @@ class ZestInst {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = self::decodeid( $cap[ 1 ] );
 				$buff[] = $this->tokQname( $qname );
+				// strip off *| or | prefix
+				if ( substr( $qname, 0, 1 ) === '|' ) {
+					$qname = substr( $qname, 1 );
+				} elseif ( substr( $qname, 0, 2 ) === '*|' ) {
+					$qname = substr( $qname, 2 );
+				}
 				// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			} elseif ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
@@ -1214,6 +1227,12 @@ class ZestInst {
 		// qname
 		if ( $cap === '*' ) {
 			return $this->selectors0['*'];
+		} elseif ( substr( $cap, 0, 1 ) === '|' ) {
+			// no namespace
+			return $this->selectors1['typeNoNS']( substr( $cap, 1 ) );
+		} elseif ( substr( $cap, 0, 2 ) === '*|' ) {
+			// any namespace including no namespace
+			return $this->selectors1['type']( substr( $cap, 2 ) );
 		} else {
 			return $this->selectors1['type']( $cap );
 		}

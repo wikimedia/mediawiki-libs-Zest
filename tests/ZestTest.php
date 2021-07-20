@@ -17,6 +17,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( array_key_exists( 'Document', $expectedList ) ) {
 			$expectedList = $expectedList['Document'];
 		}
+		if ( array_key_exists( 'remex', $expectedList ) ) {
+			$expectedList = $expectedList['remex'];
+		}
 		$doc = self::loadHTML( __DIR__ . "/index.html" );
 		$matches = Zest::find( $selector, $doc );
 
@@ -41,6 +44,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	public function testFindRemexFragment( string $selector, array $expectedList ) {
 		if ( array_key_exists( 'DocumentFragment', $expectedList ) ) {
 			$expectedList = $expectedList['DocumentFragment'];
+		}
+		if ( array_key_exists( 'remex', $expectedList ) ) {
+			$expectedList = $expectedList['remex'];
 		}
 		$doc = self::loadHTML( __DIR__ . "/index.html" );
 		$frag = $doc->createDocumentFragment();
@@ -69,6 +75,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( array_key_exists( 'Document', $expectedList ) ) {
 			$expectedList = $expectedList['Document'];
 		}
+		if ( array_key_exists( 'dom', $expectedList ) ) {
+			$expectedList = $expectedList['dom'];
+		}
 		$doc = new DOMDocument;
 		$html = file_get_contents( __DIR__ . "/index.html" );
 		$html = mb_convert_encoding( $html, "HTML-ENTITIES", "utf-8" );
@@ -96,6 +105,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	public function testFindDOMFragment( string $selector, array $expectedList ) {
 		if ( array_key_exists( 'DocumentFragment', $expectedList ) ) {
 			$expectedList = $expectedList['DocumentFragment'];
+		}
+		if ( array_key_exists( 'dom', $expectedList ) ) {
+			$expectedList = $expectedList['dom'];
 		}
 		$doc = new DOMDocument;
 		$html = file_get_contents( __DIR__ . "/index.html" );
@@ -179,6 +191,10 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ 'article > header, header + p', [ "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/p[1]" ] ],
 			// Case insensitive attribute value matching
 			[ 'input[value="submit"i]', [ '/html[1]/body[1]/footer[1]/form[1]/input[2]' ] ],
+			// Namespace selector
+			[ 'head', [ '/html[1]/head[1]' ] ],
+			[ '*|head', [ '/html[1]/head[1]' ] ],
+			[ '|head', [ 'remex' => [], 'dom' => [ '/html[1]/head[1]' ] ] ],
 		];
 	}
 
