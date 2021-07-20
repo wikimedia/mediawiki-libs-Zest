@@ -24,7 +24,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testUnquote( $given, $expected ) {
 		$var = TestingAccessWrapper::newFromClass( ZestInst::class )->unquote( $given );
-		$this->assertSame( $var, $expected );
+		$this->assertSame( $expected, $var );
 	}
 
 	public function unquoteProvider() {
@@ -41,8 +41,8 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testParseNth( $given, $group, $offset ) {
 		$res = TestingAccessWrapper::newFromClass( ZestInst::class )->parseNth( $given );
-		$this->assertSame( $res->group, $group );
-		$this->assertSame( $res->offset, $offset );
+		$this->assertSame( $group, $res->group );
+		$this->assertSame( $offset, $res->offset );
 	}
 
 	public function parseNthProvider() {
@@ -70,8 +70,8 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 				strtolower( $el->parentNode->nodeName ) === 'article';
 		} );
 		$matches = $z1->find( ':zesttest', $doc );
-		$this->assertSame( count( $matches ), 1 );
-		$this->assertSame( self::toXPath( $matches[0] ), '/html[1]/body[1]/article[1]/footer[1]' );
+		$this->assertCount( 1, $matches );
+		$this->assertSame( '/html[1]/body[1]/article[1]/footer[1]', self::toXPath( $matches[0] ) );
 
 		// Verify that this new selector doesn't infect previously- or
 		// subsequently-created selector engines.

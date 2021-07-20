@@ -26,8 +26,8 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( count( $expectedList ) === 0 ) {
 			// Just ensure there's at least one assertion to keep the test
 			// runner happy, even if the selector isn't expected to match
-			// anything. (This assertion is guaranteed to pass.)
-			$this->assertSame( count( $matches ), 0 );
+			// anything.
+			$this->assertSame( $expectedList, $matchesList );
 		}
 	}
 
@@ -50,8 +50,8 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( count( $expectedList ) === 0 ) {
 			// Just ensure there's at least one assertion to keep the test
 			// runner happy, even if the selector isn't expected to match
-			// anything. (This assertion is guaranteed to pass.)
-			$this->assertSame( count( $matches ), 0 );
+			// anything.
+			$this->assertSame( $expectedList, $matchesList );
 		}
 	}
 
@@ -126,7 +126,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
 		}
 		$matches = Zest::find( '#hi', $doc );
-		$this->assertSame( count( $matches ), 1 );
+		$this->assertCount( 1, $matches );
 		$el0 = $matches[0];
 		$ns = $doc->documentElement->namespaceURI;
 		$el1 = $doc->createElementNS( $ns, 'p' );
@@ -136,7 +136,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		Zest::find( 'body', $doc )[0]->appendChild( $el2 );
 		$el0->parentNode->removeChild( $el0 );
 		$matches = Zest::find( '#hi', $doc );
-		$this->assertSame( count( $matches ), 1 );
+		$this->assertCount( 1, $matches );
 		$this->assertContains( $el2, $matches );
 	}
 
@@ -159,11 +159,11 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$el = $doc->createElementNS( $ns, "p\u{00C0}p" );
 		Zest::find( 'body', $doc )[0]->appendChild( $el );
 		$matches = Zest::find( "p\u{00C0}p", $doc );
-		$this->assertSame( count( $matches ), 1 );
+		$this->assertCount( 1, $matches );
 		$this->assertContains( $el, $matches );
 		// Using CSS escape mechanism to smuggle quotation marks into tagname
 		$matches = Zest::find( 'p\\22\\27p', $doc );
-		$this->assertSame( count( $matches ), 0 );
+		$this->assertCount( 0, $matches );
 	}
 
 	public function findTagProvider() {
