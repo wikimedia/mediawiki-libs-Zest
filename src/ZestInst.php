@@ -3,9 +3,9 @@
 namespace Wikimedia\Zest;
 
 use DOMDocument;
+use DOMDocumentFragment;
 use DOMElement;
 use DOMNode;
-use DOMNodeList;
 use Error;
 use InvalidArgumentException;
 
@@ -108,8 +108,11 @@ class ZestInst {
 			return false;
 		}
 		// The root `html` element (node type 9) can be a first- or
-		// last-child, too.
-		return $parent->nodeType === 1 || self::nodeIsDocument( $parent );
+		// last-child, too, which means that the document (or document
+		// fragment) counts as an "element".
+		return $parent->nodeType === 1 /* Element */ ||
+			self::nodeIsDocument( $parent ) /* Document */ ||
+			$parent->nodeType === 11; /* DocumentFragment */
 	}
 
 	/**
@@ -229,7 +232,8 @@ class ZestInst {
 	 * here.  This function can support returning *all* of the matches for
 	 * a given ID, if the underlying DOM implementation supports this.
 	 *
-	 * @param DOMDocument|DOMElement $context
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
+	 *   The scoping root for the search
 	 * @param string $id
 	 * @param array $opts Additional match-context options (optional)
 	 * @return array A list of the elements with the given ID. When there are more
@@ -239,6 +243,8 @@ class ZestInst {
 		if ( is_callable( $opts['getElementsById'] ?? null ) ) {
 			// Third-party DOM implementation might provide a way to
 			// get multiple results for a given ID.
+			// Note that this must work for DocumentFragment and Element
+			// as well!
 			$func = $opts['getElementsById'];
 			return $func( $context, $id );
 		}
@@ -259,8 +265,8 @@ class ZestInst {
 		// exists in the document. See:
 		// http://php.net/manual/en/domdocument.getelementbyid.php
 		if ( $r !== null ) {
-			// Verify that this node is actually rooted in the
-			// document (or in the context), since the element
+			// Verify that this node is actually connected to the
+			// document (or to the context), since the element
 			// isn't removed from the index immediately when it
 			// is deleted. (Also PHP's call is not scoped.)
 			// (Note that scoped getElementsById is *exclusive* of $context,
@@ -279,13 +285,47 @@ class ZestInst {
 			// when this is a PHP-provided \DOMDocument.  For 3rd-party
 			// DOM implementations, we assume that getElementById() was
 			// reliable.
-			return [];
+			// @phan-suppress-next-line PhanUndeclaredProperty
+			if ( $context->isConnected || $id === '' ) {
+				return [];
+			}
+			// For disconnected Elements and DocumentFragments, we need
+			// to do this the hard/slow way
+			$r = [];
+			foreach ( self::getElementsByTagName( $context, '*', $opts ) as $el ) {
+				if ( $id === ( $el->getAttribute( 'id' ) ?? '' ) ) {
+					$r[] = $el;
+				}
+			}
+			return $r;
 		}
 		// Do an xpath search, which is still a full traversal of the tree
 		// (sigh) but 25% faster than traversing it wholly in PHP.
 		$xpath = new \DOMXPath( $doc );
 		$query = './/*[@id=' . self::xpathQuote( $id ) . ']';
+		if ( $context->nodeType === 11 ) {
+			// ugh, PHP dom extension workaround: nodes which are direct
+			// children of the DocumentFragment are not matched unless we
+			// use a ./ query in addition to the .// query.
+			$query = "./" . substr( $query, 3 ) . "|$query";
+		}
 		return iterator_to_array( $xpath->query( $query, $context ) );
+	}
+
+	private static function docFragHelper( $docFrag, string $sel, array $opts, callable $collectFunc ) {
+		$result = [];
+		for ( $n = $docFrag->firstChild; $n; $n = $n->nextSibling ) {
+			if ( $n->nodeType !== 1 ) {
+				continue; // Not an element
+			}
+			// See if $n itself should be included
+			if ( Zest::matches( $n, $sel, $opts ) ) {
+				$result[] = $n;
+			}
+			// Now include all of $n's children
+			array_splice( $result, count( $result ), 0, $collectFunc( $n ) );
+		}
+		return $result;
 	}
 
 	/**
@@ -293,12 +333,23 @@ class ZestInst {
 	 * The PHP DOM doesn't provide this method for DOMElement, and the
 	 * implementation in DOMDocument has performance issues.
 	 *
-	 * @param DOMDocument|DOMElement $context
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 * @param string $tagName
 	 * @param array $opts Additional match-context options (optional)
-	 * @return DOMNodeList
+	 * @return array
 	 */
 	public static function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
+		if ( $context->nodeType === 11 /* DocumentFragment */ ) {
+			// DOM standards don't define getElementsByTagName on
+			// DocumentFragment, and XPath supports it but has a bug which
+			// omits root elements.  So emulate in both these cases.
+			return self::docFragHelper(
+				$context, $tagName, $opts,
+				function ( $el ) use ( $tagName, $opts ): array {
+					return self::getElementsByTagName( $el, $tagName, $opts );
+				}
+			);
+		}
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
 		if ( !( $doc instanceof DOMDocument ) ) {
@@ -306,7 +357,9 @@ class ZestInst {
 		}
 		if ( $opts['standardsMode'] ?? false ) {
 			// For third-party DOM implementations, just use native func.
-			return $context->getElementsByTagName( $tagName );
+			return iterator_to_array(
+				$context->getElementsByTagName( $tagName )
+			);
 		}
 		// This *should* just be a call to PHP's `getElementByTagName`
 		// function *BUT* PHP's implementation is 100x slower than using
@@ -318,7 +371,8 @@ class ZestInst {
 		$tagName = strtolower( $tagName );
 
 		$xpath = new \DOMXPath( $doc );
-		$ns = $doc->documentElement->namespaceURI;
+		$ns = $doc->documentElement === null ? 'force use of local-name' :
+			$doc->documentElement->namespaceURI;
 		if ( $tagName === '*' ) {
 			$query = ".//*";
 		} elseif ( $ns || !preg_match( '/^[_a-z][-.0-9_a-z]*$/S', $tagName ) ) {
@@ -326,16 +380,31 @@ class ZestInst {
 		} else {
 			$query = ".//$tagName";
 		}
-		return $xpath->query( $query, $context );
+		return iterator_to_array( $xpath->query( $query, $context ) );
 	}
 
 	/**
 	 * @param DOMNode $context
 	 * @param string $className
 	 * @param array $opts
-	 * @return DOMNodeList
+	 * @return array
 	 */
 	private static function getElementsByClassName( $context, string $className, $opts ) {
+		if ( $context->nodeType === 11 /* DocumentFragment */ ) {
+			// DOM standards don't define getElementsByClassName on
+			// DocumentFragment, and XPath supports it but has a bug which
+			// omits root elements.  So emulate in both these cases.
+			return self::docFragHelper(
+				$context,
+				// NOTE this only works when $className is a single class,
+				// but that's the only way we invoke it.
+				".$className",
+				$opts,
+				function ( $el ) use ( $className, $opts ) : array {
+					return self::getElementsByClassName( $el, $className, $opts );
+				}
+			);
+		}
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
 		if ( !( $doc instanceof DOMDocument ) ) {
@@ -343,8 +412,10 @@ class ZestInst {
 		}
 		if ( $opts['standardsMode'] ?? false ) {
 			// For third-party DOM implementations, just use native func.
-			// @phan-suppress-next-line PhanUndeclaredMethod
-			return $context->getElementsByClassName( $className );
+			return iterator_to_array(
+				// @phan-suppress-next-line PhanUndeclaredMethod
+				$context->getElementsByClassName( $className )
+			);
 		}
 
 		// PHP doesn't have an implementation of this method; use XPath
@@ -354,7 +425,7 @@ class ZestInst {
 		$xpath = new \DOMXPath( $doc );
 		$quotedClassName = self::xpathQuote( " $className " );
 		$query = ".//*[contains(concat(' ', normalize-space(@class), ' '), $quotedClassName)]";
-		return $xpath->query( $query, $context );
+		return iterator_to_array( $xpath->query( $query, $context ) );
 	}
 
 	/**
@@ -973,7 +1044,7 @@ class ZestInst {
 			$i = count( $nodes );
 
 			while ( $i-- ) {
-				$node = $nodes->item( $i );
+				$node = $nodes[$i];
 				if ( call_user_func( $ref->test->func, $el, $opts ) ) {
 					$node = null;
 					return true;
@@ -1249,7 +1320,7 @@ class ZestInst {
 			$i = count( $scope );
 
 			while ( $i-- ) {
-				if ( call_user_func( $subject->test->func, $scope->item( $i ), $opts ) && $target === $el ) {
+				if ( call_user_func( $subject->test->func, $scope[$i], $opts ) && $target === $el ) {
 					$target = null;
 					return true;
 				}
@@ -1299,11 +1370,12 @@ class ZestInst {
 	 * Selection
 	 */
 
-	// $node should be a DOMDocument or a DOMElement
+	// $node should be a DOMDocument, DOMDocumentFragment, or a DOMElement
+	// These are "ParentNode" in the DOM spec.
 
 	/**
 	 * @param string $sel
-	 * @param DOMDocument|DOMElement $node
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $node
 	 * @param array $opts
 	 * @return DOMNode[]
 	 */
@@ -1348,7 +1420,8 @@ class ZestInst {
 	 * no matches, although `:scope *` would return matches.
 	 *
 	 * @param string $sel The CSS selector string
-	 * @param DOMDocument|DOMElement $context The scope for the search
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
+	 *   The scoping root for the search
 	 * @param array $opts Additional match-context options (optional)
 	 * @return DOMElement[] Elements matching the CSS selector
 	 */
@@ -1377,10 +1450,10 @@ class ZestInst {
 				}
 			}
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
-				return iterator_to_array( self::getElementsByClassName( $context, substr( $sel, 1 ), $opts ) );
+				return self::getElementsByClassName( $context, substr( $sel, 1 ), $opts );
 			}
 			if ( preg_match( '/^\w+$/', $sel ) ) {
-				return iterator_to_array( self::getElementsByTagName( $context, $sel, $opts ) );
+				return self::getElementsByTagName( $context, $sel, $opts );
 			}
 		}
 		/* do things the hard/slow way */

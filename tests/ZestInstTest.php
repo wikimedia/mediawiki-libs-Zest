@@ -89,16 +89,6 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( 2, $thrown );
 	}
 
-	public function testGetElementByClassName() {
-		$doc = self::loadHTML( __DIR__ . "/index.html" );
-		$doc->documentElement->setAttribute( 'class', "testGetElementByClassName\t" );
-		$this->assertSame(
-			$doc->documentElement,
-			TestingAccessWrapper::newFromObject( new ZestInst )
-			->getElementsByClassName( $doc, 'testGetElementByClassName', [] )->item( 0 )
-		);
-	}
-
 	public static function toXPath( $node ) {
 		return ZestTest::toXPath( $node );
 	}

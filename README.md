@@ -59,8 +59,9 @@ This is equivalent to the standard DOM method
 In addition, with the proper support from the DOM implementation, this can
 return more than one matching element.
 
-#### `Zest::getElementsByTagName( $contextNode, string $tagName, array $opts = [] ): DOMNodeList`
-This is equivalent to the standard DOM method [`Element#getElementsByTagName()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName).
+#### `Zest::getElementsByTagName( $contextNode, string $tagName, array $opts = [] ): array`
+This is equivalent to the standard DOM method [`Element#getElementsByTagName()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName),
+although you can use a `DocumentFragment` as the `$contextNode`.
 
 ## Extension
 

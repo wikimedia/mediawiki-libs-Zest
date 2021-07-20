@@ -3,9 +3,9 @@
 namespace Wikimedia\Zest;
 
 use DOMDocument;
+use DOMDocumentFragment;
 use DOMElement;
 use DOMNode;
-use DOMNodeList;
 
 /**
  * Zest.php (https://github.com/wikimedia/zest.php)
@@ -33,7 +33,8 @@ class Zest {
 	/**
 	 * Find elements matching a CSS selector underneath $context.
 	 * @param string $sel The CSS selector string
-	 * @param DOMDocument|DOMElement $context The scope for the search
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
+	 *   The scoping root for the search
 	 * @param array $opts Additional match-context options (optional)
 	 * @return array Elements matching the CSS selector
 	 */
@@ -57,7 +58,8 @@ class Zest {
 	 * The PHP DOM doesn't provide this method for DOMElement, and the
 	 * implementation in DOMDocument is broken.
 	 *
-	 * @param DOMDocument|DOMElement $context
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
+	 *   The scoping root for the search
 	 * @param string $id
 	 * @param array $opts Additional match-context options (optional)
 	 * @return array A list of the elements with the given ID. When there are more
@@ -75,7 +77,7 @@ class Zest {
 	 * @param DOMDocument|DOMElement $context
 	 * @param string $tagName
 	 * @param array $opts Additional match-context options (optional)
-	 * @return DOMNodeList
+	 * @return array
 	 */
 	public static function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
 		return ZestInst::getElementsByTagName( $context, $tagName, $opts );
