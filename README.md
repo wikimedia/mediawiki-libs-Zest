@@ -30,12 +30,18 @@ $ composer require wikimedia/zest-css
 
 ## API
 
+Functions below which take an `opts` array can be passed additional options
+which affect match results.  This are available from within custom selectors
+(see below).  At the moment, the standard selectors support the following
+options:
+* `standardsMode` (`bool`): if present and true, various PHP workarounds
+  will be disabled in favor of calling methods defined in web standards.
 
-#### `Zest::find( string $selector, DOMNode $context ): array`</dt>
+#### `Zest::find( string $selector, $context, array $opts = [] ): array`</dt>
 This is equivalent to the standard
 DOM method [`ParentNode#querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/querySelectorAll).
 
-#### `Zest::matches( DOMNode $element, string $selector ): bool`
+#### `Zest::matches( $element, string $selector, array $opts = [] ): bool`
 This is equivalent to the standard
 DOM method [`Element#matches()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/matches).
 
@@ -46,12 +52,12 @@ and
 have some performance and spec-compliance issues, Zest also exports useful
 performant and correct versions of these:
 
-#### `Zest::getElementsById( DOMNode $contextNode, string $id ): array`
+#### `Zest::getElementsById( $contextNode, string $id, array $opts = [] ): array`
 This is equivalent to the standard DOM method
 [`Document#getElementById()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementById)
 (although you can use any context node, not just the top-level document).
 
-#### `Zest::getElementsByTagName( DOMNode $contextNode, string $tagName ): DOMNodeList`
+#### `Zest::getElementsByTagName( $contextNode, string $tagName, array $opts = [] ): DOMNodeList`
 This is equivalent to the standard DOM method [`Element#getElementsByTagName()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName).
 
 ## Extension
@@ -77,7 +83,7 @@ use Wikimedia\Zest\ZestInst;
 
 $z = new ZestInst;
 $z->addSelector1( ':name', function( string $param ):callable {
-  return function ( DOMNode $el ) use ( $param ):bool {
+  return function ( $el, array $opts ) use ( $param ):bool {
     if ($el->getAttribute('name') === $param) return true;
     return false;
   };
@@ -86,6 +92,10 @@ $z->addSelector1( ':name', function( string $param ):callable {
 // Use it!
 $z->find( 'h1:name(foo)', $document );
 ```
+
+If you wish to add selectors which depend on global properties (such as
+`:target`) you can add the global information to `$opts` and it will be
+made available when your selector function is called.
 
 __NOTE__: if your pseudo-class does not take a parameter, use `addSelector0`.
 
@@ -113,13 +123,13 @@ Here is an example how a parent combinator could be implemented:
 ``` js
 $z = new ZestInst;
 $z->addCombinator( '<', function( callable $test ): callable {
-  return function( DOMNode $el ) use ( $test ): ?DOMNode {
+  return function( $el, array $opts ) use ( $test ): ?DOMNode {
     // `$el` is the current element
     $el = $el->firstChild;
     while ($el) {
       // return the relevant element
       // if it passed the test
-      if ($el->nodeType === 1 && call_user_func($test, $el)) {
+      if ($el->nodeType === 1 && call_user_func($test, $el, $opts)) {
         return $el;
       }
       $el = $el->nextSibling;
@@ -150,6 +160,9 @@ The original zest codebase is
 
 The port to PHP was initially done by C. Scott Ananian and is
 (c) Copyright 2019 Wikimedia Foundation.
+
+Additional code and functionality is
+(c) Copyright 2020-2021 Wikimedia Foundation.
 
 Both the original zest codebase and this port are distributed under
 the MIT license; see LICENSE for more info.

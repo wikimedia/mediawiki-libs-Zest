@@ -1,7 +1,11 @@
 # zest-css x.x.x (not yet released)
 * Dependency updates
-* Sort results in document order when DOM library implements
-  compareDocumentPosition
+* Add optional "options" argument to main entry points to allow passing
+  information to custom selectors, as well as to opt in to "standards
+  mode" where various PHP workarounds are disabled and additional features
+  are available.
+* Sort results in document order in standards mode.
+* Support `:scope` selector
 
 # zest-css 1.1.5 (2021-03-23)
 * Dependency updates

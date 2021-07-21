@@ -34,20 +34,22 @@ class Zest {
 	 * Find elements matching a CSS selector underneath $context.
 	 * @param string $sel The CSS selector string
 	 * @param DOMDocument|DOMElement $context The scope for the search
+	 * @param array $opts Additional match-context options (optional)
 	 * @return array Elements matching the CSS selector
 	 */
-	public static function find( string $sel, $context ): array {
-		return self::singleton()->find( $sel, $context );
+	public static function find( string $sel, $context, array $opts = [] ): array {
+		return self::singleton()->find( $sel, $context, $opts );
 	}
 
 	/**
 	 * Determine whether an element matches the given selector.
 	 * @param DOMNode $el The element to be tested
 	 * @param string $sel The CSS selector string
+	 * @param array $opts Additional match-context options (optional)
 	 * @return bool True iff the element matches the selector
 	 */
-	public static function matches( $el, string $sel ): bool {
-		return self::singleton()->matches( $el, $sel );
+	public static function matches( $el, string $sel, array $opts = [] ): bool {
+		return self::singleton()->matches( $el, $sel, $opts );
 	}
 
 	/**
@@ -57,11 +59,12 @@ class Zest {
 	 *
 	 * @param DOMDocument|DOMElement $context
 	 * @param string $id
+	 * @param array $opts Additional match-context options (optional)
 	 * @return array A list of the elements with the given ID. When there are more
 	 *   than one, this method might return all of them or only the first one.
 	 */
-	public static function getElementsById( $context, string $id ): array {
-		return ZestInst::getElementsById( $context, $id );
+	public static function getElementsById( $context, string $id, array $opts = [] ): array {
+		return ZestInst::getElementsById( $context, $id, $opts );
 	}
 
 	/**
@@ -71,10 +74,11 @@ class Zest {
 	 *
 	 * @param DOMDocument|DOMElement $context
 	 * @param string $tagName
+	 * @param array $opts Additional match-context options (optional)
 	 * @return DOMNodeList
 	 */
-	public static function getElementsByTagName( $context, string $tagName ) {
-		return ZestInst::getElementsByTagName( $context, $tagName );
+	public static function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
+		return ZestInst::getElementsByTagName( $context, $tagName, $opts );
 	}
 
 }

@@ -30,21 +30,20 @@ class ZestInst {
 	 * Sort query results in document order.
 	 * @param array &$results
 	 */
-	private static function sort( &$results ) {
+	private static function sort( &$results, array $opts ) {
 		if ( count( $results ) < 2 ) {
 			return;
 		}
-		if ( method_exists( $results[0], 'compareDocumentPosition' ) ) {
-			try {
-				// DOM spec-compliant version:
-				usort( $results, static function ( $a, $b ) {
-					return ( $a->compareDocumentPosition( $b ) & 2 ) ? 1 : -1;
-				} );
-				return;
-			} catch ( \Throwable $e ) {
-				// PHP's dom extension throws a "Not yet implemented" exception
-			}
+		if ( $opts['standardsMode'] ?? false ) {
+			// DOM spec-compliant version:
+			usort( $results, static function ( $a, $b ) {
+				return ( $a->compareDocumentPosition( $b ) & 2 ) ? 1 : -1;
+			} );
 		}
+		// PHP's dom extension returns true for method_exists on
+		// compareDocumentPosition, but when called it throws a
+		// "Not yet implemented" exception
+
 		// If compareDocumentPosition isn't implemented, skip the sort.
 		// Our results are generally added as a result of an in-order
 		// traversal of the tree, so absent any funny business with complex
@@ -227,15 +226,19 @@ class ZestInst {
 	 *
 	 * @param DOMDocument|DOMElement $context
 	 * @param string $id
+	 * @param array $opts Additional match-context options (optional)
 	 * @return array A list of the elements with the given ID. When there are more
 	 *   than one, this method might return all of them or only the first one.
 	 */
-	public static function getElementsById( $context, string $id ): array {
+	public static function getElementsById( $context, string $id, array $opts = [] ): array {
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
-		// PHP doesn't provide an DOMElement-scoped version of
-		// getElementById, so we can't call this directly on $context --
-		// but that's okay because (1) IDs should be unique, and
+		if ( !( $doc instanceof DOMDocument ) ) {
+			$opts += [ 'standardsMode' => true ];
+		}
+		// Neither PHP nor the web standards provide an DOMElement-scoped
+		// version of getElementById, so we can't call this directly on
+		// $context -- but that's okay because (1) IDs should be unique, and
 		// (2) we verify the scope of the returned element below
 		// anyway (to work around bugs with deleted-but-not-gc'ed
 		// nodes).
@@ -249,7 +252,9 @@ class ZestInst {
 			// document (or in the context), since the element
 			// isn't removed from the index immediately when it
 			// is deleted. (Also PHP's call is not scoped.)
-			for ( $parent = $r; $parent; $parent = $parent->parentNode ) {
+			// (Note that scoped getElementsById is *exclusive* of $context,
+			// so we start this search at r's parent node.)
+			for ( $parent = $r->parentNode; $parent; $parent = $parent->parentNode ) {
 				if ( $parent === $context ) {
 					return [ $r ];
 				}
@@ -258,7 +263,7 @@ class ZestInst {
 			// shadowing a later-added element, so we can't return
 			// null here directly; fallback to a full search.
 		}
-		if ( !( $doc instanceof DOMDocument ) ) {
+		if ( $opts['standardsMode'] ?? false ) {
 			// The workaround below only works (and is only necessary!)
 			// when this is a PHP-provided \DOMDocument.  For 3rd-party
 			// DOM implementations, we don't have to go through this
@@ -279,9 +284,19 @@ class ZestInst {
 	 *
 	 * @param DOMDocument|DOMElement $context
 	 * @param string $tagName
+	 * @param array $opts Additional match-context options (optional)
 	 * @return DOMNodeList
 	 */
-	public static function getElementsByTagName( $context, string $tagName ) {
+	public static function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
+		$doc = self::nodeIsDocument( $context ) ?
+			$context : $context->ownerDocument;
+		if ( !( $doc instanceof DOMDocument ) ) {
+			$opts += [ 'standardsMode' => true ];
+		}
+		if ( $opts['standardsMode'] ?? false ) {
+			// For third-party DOM implementations, just use native func.
+			return $context->getElementsByTagName( $tagName );
+		}
 		// This *should* just be a call to PHP's `getElementByTagName`
 		// function *BUT* PHP's implementation is 100x slower than using
 		// XPath to get the same results (!)
@@ -291,13 +306,6 @@ class ZestInst {
 		// the DOM spec says it should report uppercase)
 		$tagName = strtolower( $tagName );
 
-		$doc = self::nodeIsDocument( $context ) ?
-			$context : $context->ownerDocument;
-
-		if ( !( $doc instanceof DOMDocument ) ) {
-			// For third-party DOM implementations, just use native func.
-			return $context->getElementsByTagName( $tagName );
-		}
 		$xpath = new \DOMXPath( $doc );
 		$ns = $doc->documentElement->namespaceURI;
 		if ( $tagName === '*' ) {
@@ -313,21 +321,25 @@ class ZestInst {
 	/**
 	 * @param DOMNode $context
 	 * @param string $className
+	 * @param array $opts
 	 * @return DOMNodeList
 	 */
-	private static function getElementsByClassName( $context, string $className ) {
-		// PHP doesn't have an implementation of this method; use XPath
-		// to quickly get results.  (It would be faster still if there was an
-		// actual index, but this will be about 25% faster than doing the
-		// tree traversal all in PHP.)
+	private static function getElementsByClassName( $context, string $className, $opts ) {
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
-
 		if ( !( $doc instanceof DOMDocument ) ) {
+			$opts += [ 'standardsMode' => true ];
+		}
+		if ( $opts['standardsMode'] ?? false ) {
 			// For third-party DOM implementations, just use native func.
 			// @phan-suppress-next-line PhanUndeclaredMethod
 			return $context->getElementsByClassName( $className );
 		}
+
+		// PHP doesn't have an implementation of this method; use XPath
+		// to quickly get results.  (It would be faster still if there was an
+		// actual index, but this will be about 25% faster than doing the
+		// tree traversal all in PHP.)
 		$xpath = new \DOMXPath( $doc );
 		$quotedClassName = self::xpathQuote( " $className " );
 		$query = ".//*[contains(concat(' ', normalize-space(@class), ' '), $quotedClassName)]";
@@ -360,9 +372,9 @@ class ZestInst {
 
 	/**
 	 * @param string $param
-	 * @param callable(DOMNode,DOMNode):bool $test
+	 * @param callable(DOMNode,DOMNode,array):bool $test
 	 * @param bool $last
-	 * @return callable(DOMNode):bool
+	 * @return callable(DOMNode,array):bool
 	 */
 	private static function nth( string $param, callable $test, bool $last ): callable {
 		$param = self::parseNth( $param );
@@ -370,7 +382,7 @@ class ZestInst {
 		$offset = $param->offset;
 		$find = ( !$last ) ? [ self::class, 'child' ] : [ self::class, 'lastChild' ];
 		$advance = ( !$last ) ? [ self::class, 'next' ] : [ self::class, 'prev' ];
-		return function ( $el ) use ( $find, $test, $offset, $group, $advance ): bool {
+		return function ( $el, array $opts ) use ( $find, $test, $offset, $group, $advance ): bool {
 			if ( !self::parentIsElement( $el ) ) {
 				return false;
 			}
@@ -379,7 +391,7 @@ class ZestInst {
 			$pos = 0;
 
 			while ( $rel ) {
-				if ( call_user_func( $test, $rel, $el ) ) {
+				if ( call_user_func( $test, $rel, $el, $opts ) ) {
 					$pos++;
 				}
 				if ( $rel === $el ) {
@@ -396,20 +408,20 @@ class ZestInst {
 
 	/**
 	 * Simple Selectors which take no arguments.
-	 * @var array<string,(callable(DOMNode):bool)>
+	 * @var array<string,(callable(DOMNode,array):bool)>
 	 */
 	private $selectors0;
 
 	/**
 	 * Simple Selectors which take one argument.
-	 * @var array<string,(callable(string):(callable(DOMNode):bool))>
+	 * @var array<string,(callable(string):(callable(DOMNode,array):bool))>
 	 */
 	private $selectors1;
 
 	/**
 	 * Add a custom selector that takes no parameters.
 	 * @param string $key Name of the selector
-	 * @param callable(DOMNode):bool $func
+	 * @param callable(DOMNode,array):bool $func
 	 *   The selector match function
 	 */
 	public function addSelector0( string $key, callable $func ) {
@@ -420,7 +432,7 @@ class ZestInst {
 	 * Add a custom selector that takes 1 parameter, which is passed as a
 	 * string.
 	 * @param string $key Name of the selector
-	 * @param callable(string):(callable(DOMNode):bool) $func
+	 * @param callable(string):(callable(DOMNode,array):bool) $func
 	 *   The selector match function
 	 */
 	public function addSelector1( string $key, callable $func ) {
@@ -428,27 +440,27 @@ class ZestInst {
 	}
 
 	private function initSelectors() {
-		$this->addSelector0( '*', static function ( $el ): bool {
+		$this->addSelector0( '*', static function ( $el, $opts ): bool {
 			return true;
 		} );
 		$this->addSelector1( 'type', static function ( string $type ): callable {
 			$type = strtolower( $type );
-			return static function ( $el ) use ( $type ): bool {
+			return static function ( $el, $opts ) use ( $type ): bool {
 				return strtolower( $el->nodeName ) === $type;
 			};
 		} );
-		$this->addSelector0( ':first-child', function ( $el ): bool {
+		$this->addSelector0( ':first-child', function ( $el, $opts ): bool {
 			return !self::prev( $el ) && self::parentIsElement( $el );
 		} );
-		$this->addSelector0( ':last-child', function ( $el ): bool {
+		$this->addSelector0( ':last-child', function ( $el, $opts ): bool {
 			return !self::next( $el ) && self::parentIsElement( $el );
 		} );
-		$this->addSelector0( ':only-child', function ( $el ): bool {
+		$this->addSelector0( ':only-child', function ( $el, $opts ): bool {
 			return !self::prev( $el ) && !self::next( $el )
 				&& self::parentIsElement( $el );
 		} );
 		$this->addSelector1( ':nth-child', function ( string $param, bool $last = false ): callable {
-			return self::nth( $param, static function ( $ignore1, $ignore2 ) {
+			return self::nth( $param, static function ( $rel, $el, $opts ):bool {
 				return true;
 			}, $last );
 		} );
@@ -456,19 +468,19 @@ class ZestInst {
 		$this->addSelector1( ':nth-last-child', function ( string $param ): callable {
 			return $this->selectors1[ ':nth-child' ]( $param, true );
 		} );
-		$this->addSelector0( ':root', static function ( $el ): bool {
+		$this->addSelector0( ':root', static function ( $el, $opts ): bool {
 			return $el->ownerDocument->documentElement === $el;
 		} );
-		$this->addSelector0( ':empty', static function ( $el ): bool {
+		$this->addSelector0( ':empty', static function ( $el, $opts ): bool {
 			return !$el->firstChild;
 		} );
 		$this->addSelector1( ':not', function ( string $sel ) {
 			$test = self::compileGroup( $sel );
-			return static function ( $el ) use ( $test ): bool {
-				return !call_user_func( $test, $el );
+			return static function ( $el, $opts ) use ( $test ): bool {
+				return !call_user_func( $test, $el, $opts );
 			};
 		} );
-		$this->addSelector0( ':first-of-type', function ( $el ): bool {
+		$this->addSelector0( ':first-of-type', function ( $el, $opts ): bool {
 			if ( !self::parentIsElement( $el ) ) {
 				return false;
 			}
@@ -480,7 +492,7 @@ class ZestInst {
 			}
 			return true;
 		} );
-		$this->addSelector0( ':last-of-type', function ( $el ): bool {
+		$this->addSelector0( ':last-of-type', function ( $el, $opts ): bool {
 			if ( !self::parentIsElement( $el ) ) {
 				return false;
 			}
@@ -492,12 +504,12 @@ class ZestInst {
 			}
 			return true;
 		} );
-		$this->addSelector0( ':only-of-type', function ( $el ): bool {
-			return $this->selectors0[ ':first-of-type' ]( $el ) &&
-				$this->selectors0[ ':last-of-type' ]( $el );
+		$this->addSelector0( ':only-of-type', function ( $el, $opts ): bool {
+			return $this->selectors0[ ':first-of-type' ]( $el, $opts ) &&
+				$this->selectors0[ ':last-of-type' ]( $el, $opts );
 		} );
 		$this->addSelector1( ':nth-of-type', function ( string $param, bool $last = false ): callable  {
-			return self::nth( $param, static function ( $rel, $el ) {
+			return self::nth( $param, static function ( $rel, $el, $opts ):bool {
 				return $rel->nodeName === $el->nodeName;
 			}, $last );
 		} );
@@ -505,25 +517,36 @@ class ZestInst {
 		$this->addSelector1( ':nth-last-of-type', function ( string $param ): callable {
 			return $this->selectors1[ ':nth-of-type' ]( $param, true );
 		} );
-		$this->addSelector0( ':checked', static function ( $el ): bool {
+		/** @suppress PhanUndeclaredProperty not defined in PHP DOM */
+		$this->addSelector0( ':checked', static function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
-			// XXX these properties don't exist in the PHP DOM
-			// return $el->checked || $el->selected;
+			if ( $opts['standardsMode'] ?? false ) {
+				// These properties don't exist in the PHP DOM, and in fact
+				// they are supposed to reflect the *dynamic* state of the
+				// widget, not the 'default' state (which is given by the
+				// attribute value)
+				if ( isset( $el->checked ) || isset( $el->selected ) ) {
+					return ( isset( $el->checked ) && $el->checked ) ||
+						( isset( $el->selected ) && $el->selected );
+				}
+			}
 			return $el->hasAttribute( 'checked' ) || $el->hasAttribute( 'selected' );
 		} );
-		$this->addSelector0( ':indeterminate', function ( $el ): bool {
-			return !$this->selectors0[ ':checked' ]( $el );
+		$this->addSelector0( ':indeterminate', function ( $el, $opts ): bool {
+			return !$this->selectors0[ ':checked' ]( $el, $opts );
 		} );
-		$this->addSelector0( ':enabled', static function ( $el ): bool {
+		/** @suppress PhanUndeclaredProperty not defined in PHP DOM */
+		$this->addSelector0( ':enabled', static function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
-			// XXX these properties don't exist in the PHP DOM
-			// return !$el->disabled && $el->type !== 'hidden';
-			return !$el->hasAttribute( 'disabled' ) && $el->getAttribute( 'type' ) !== 'hidden';
+			if ( ( $opts['standardsMode'] ?? false ) && isset( $el->type ) ) {
+				$type = $el->type; // this does case normalization in spec
+			} else {
+				$type = $el->getAttribute( 'type' );
+			}
+			return !$el->hasAttribute( 'disabled' ) && $type !== 'hidden';
 		} );
-		$this->addSelector0( ':disabled', static function ( $el ): bool {
+		$this->addSelector0( ':disabled', static function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
-			// XXX these properties don't exist in the PHP DOM
-			// return !!$el->disabled;
 			return $el->hasAttribute( 'disabled' );
 		} );
 		/*
@@ -547,7 +570,9 @@ class ZestInst {
 			$arg = array_shift( $args );
 			$test = self::compileGroup( implode( ',', $args ) );
 
-			return self::nth( $arg, $test, $last );
+			return self::nth( $arg, static function ( $rel, $el, $opts ) use ( $test ):bool {
+				return call_user_func( $test, $el, $opts );
+			}, $last );
 		} );
 		/** @suppress PhanParamTooMany */
 		$this->addSelector1( ':nth-last-match', function ( string $param ): callable {
@@ -585,12 +610,14 @@ class ZestInst {
 				return false;
 			};
 		} );
-		$this->addSelector0( ':scope', function ( $el, $con = null ): bool {
-			$context = $con ?? $el->ownerDocument;
-			if ( self::nodeIsDocument( $context ) ) {
-				return $el === $context->documentElement;
+		$this->addSelector0( ':scope', function ( $el, $opts ): bool {
+			$scope = $opts['scope'] ?? null;
+			if ( $scope !== null && $scope->nodeType === 1 ) {
+				return $el === $scope;
 			}
-			return $el === $context;
+			// If the scoping root is missing or not an element, then :scope
+			// should be a synonym for :root
+			return $this->selectors0[ ':root' ]( $el, $opts );
 		} );
 		/*
 		$this->addSelector0( ':any-link', function ( $el ):bool {
@@ -618,25 +645,25 @@ class ZestInst {
 			return $el->willValidate || ( $el->validity && $el->validity->valid );
 		});
 		*/
-		$this->addSelector0( ':invalid', function ( $el ):bool {
-			return !$this->selectors0[ ':valid' ]( $el );
+		$this->addSelector0( ':invalid', function ( $el, $opts ):bool {
+				return !$this->selectors0[ ':valid' ]( $el, $opts );
 		} );
 		/*
 		$this->addSelector0( ':in-range', function ( $el ):bool {
 			return $el->value > $el->min && $el->value <= $el->max;
 		});
 		*/
-		$this->addSelector0( ':out-of-range', function ( $el ): bool {
-			return !$this->selectors0[ ':in-range' ]( $el );
+		$this->addSelector0( ':out-of-range', function ( $el, $opts ): bool {
+			return !$this->selectors0[ ':in-range' ]( $el, $opts );
 		} );
-		$this->addSelector0( ':required', static function ( $el ): bool {
+		$this->addSelector0( ':required', static function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
 			return $el->hasAttribute( 'required' );
 		} );
-		$this->addSelector0( ':optional', function ( $el ): bool {
-			return !$this->selectors0[ ':required' ]( $el );
+		$this->addSelector0( ':optional', function ( $el, $opts ): bool {
+			return !$this->selectors0[ ':required' ]( $el, $opts );
 		} );
-		$this->addSelector0( ':read-only', static function ( $el ): bool {
+		$this->addSelector0( ':read-only', static function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
 			if ( $el->hasAttribute( 'readOnly' ) ) {
 				return true;
@@ -649,37 +676,37 @@ class ZestInst {
 
 			return ( $name || $el->hasAttribute( 'disabled' ) ) && $attr == null;
 		} );
-		$this->addSelector0( ':read-write', function ( $el ): bool {
-			return !$this->selectors0[ ':read-only' ]( $el );
+		$this->addSelector0( ':read-write', function ( $el, $opts ): bool {
+			return !$this->selectors0[ ':read-only' ]( $el, $opts );
 		} );
-		$this->addSelector0( ':hover', static function ( $el ): bool {
+		$this->addSelector0( ':hover', static function ( $el, $opts ): bool {
 			throw new Error( ':hover is not supported.' );
 		} );
-		$this->addSelector0( ':active', static function ( $el ): bool {
+		$this->addSelector0( ':active', static function ( $el, $opts ): bool {
 			throw new Error( ':active is not supported.' );
 		} );
-		$this->addSelector0( ':link', static function ( $el ): bool {
+		$this->addSelector0( ':link', static function ( $el, $opts ): bool {
 			throw new Error( ':link is not supported.' );
 		} );
-		$this->addSelector0( ':visited', static function ( $el ): bool {
+		$this->addSelector0( ':visited', static function ( $el, $opts ): bool {
 			throw new Error( ':visited is not supported.' );
 		} );
-		$this->addSelector0( ':column', static function ( $el ): bool {
+		$this->addSelector0( ':column', static function ( $el, $opts ): bool {
 			throw new Error( ':column is not supported.' );
 		} );
-		$this->addSelector0( ':nth-column', static function ( $el ): bool {
+		$this->addSelector0( ':nth-column', static function ( $el, $opts ): bool {
 			throw new Error( ':nth-column is not supported.' );
 		} );
-		$this->addSelector0( ':nth-last-column', static function ( $el ): bool {
+		$this->addSelector0( ':nth-last-column', static function ( $el, $opts ): bool {
 			throw new Error( ':nth-last-column is not supported.' );
 		} );
-		$this->addSelector0( ':current', static function ( $el ): bool {
+		$this->addSelector0( ':current', static function ( $el, $opts ): bool {
 			throw new Error( ':current is not supported.' );
 		} );
-		$this->addSelector0( ':past', static function ( $el ): bool {
+		$this->addSelector0( ':past', static function ( $el, $opts ): bool {
 			throw new Error( ':past is not supported.' );
 		} );
-		$this->addSelector0( ':future', static function ( $el ): bool {
+		$this->addSelector0( ':future', static function ( $el, $opts ): bool {
 			throw new Error( ':future is not supported.' );
 		} );
 		// Non-standard, for compatibility purposes.
@@ -700,10 +727,10 @@ class ZestInst {
 		// selector engines (?).
 	}
 
-	/** @return callable(DOMNode):bool */
+	/** @return callable(DOMNode,array):bool */
 	private function selectorsAttr( string $key, string $op, string $val, bool $i ): callable {
 		$op = $this->operators[ $op ];
-		return static function ( $el ) use ( $key, $i, $op, $val ): bool {
+		return static function ( $el, $opts ) use ( $key, $i, $op, $val ): bool {
 			/* XXX: the below all assumes a more complete PHP DOM than we have
 			switch ( $key ) {
 			#case 'for':
@@ -844,14 +871,14 @@ class ZestInst {
 
 	/**
 	 * Combinator Logic
-	 * @var array<string,(callable(callable(DOMNode):bool):(callable(DOMNode):(?DOMNode)))>
+	 * @var array<string,(callable(callable(DOMNode,array):bool):(callable(DOMNode,array):(?DOMNode)))>
 	 */
 	private $combinators;
 
 	/**
 	 * Add a custom combinator
 	 * @param string $key Name of the combinator
-	 * @param callable(callable(DOMNode):bool):(callable(DOMNode):(?DOMNode)) $func
+	 * @param callable(callable(DOMNode,array):bool):(callable(DOMNode,array):(?DOMNode)) $func
 	 *   The combinator match function
 	 */
 	public function addCombinator( string $key, callable $func ) {
@@ -860,9 +887,9 @@ class ZestInst {
 
 	private function initCombinators() {
 		$this->addCombinator( ' ', static function ( callable $test ): callable {
-			return static function ( $el ) use ( $test ) {
+			return static function ( $el, $opts ) use ( $test ) {
 				while ( $el = $el->parentNode ) {
-					if ( call_user_func( $test, $el ) ) {
+					if ( call_user_func( $test, $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -870,9 +897,9 @@ class ZestInst {
 			};
 		} );
 		$this->addCombinator( '>', static function ( callable $test ): callable {
-			return static function ( $el ) use ( $test ) {
+			return static function ( $el, $opts ) use ( $test ) {
 				if ( $el = $el->parentNode ) {
-					if ( call_user_func( $test, $el ) ) {
+					if ( call_user_func( $test, $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -880,9 +907,9 @@ class ZestInst {
 			};
 		} );
 		$this->addCombinator( '+', function ( callable $test ): callable {
-			return function ( $el ) use ( $test ) {
+			return function ( $el, $opts ) use ( $test ) {
 				if ( $el = self::prev( $el ) ) {
-					if ( call_user_func( $test, $el ) ) {
+					if ( call_user_func( $test, $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -890,9 +917,9 @@ class ZestInst {
 			};
 		} );
 		$this->addCombinator( '~', function ( callable $test ): callable {
-			return function ( $el ) use ( $test ) {
+			return function ( $el, $opts ) use ( $test ) {
 				while ( $el = self::prev( $el ) ) {
-					if ( call_user_func( $test, $el ) ) {
+					if ( call_user_func( $test, $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -900,8 +927,8 @@ class ZestInst {
 			};
 		} );
 		$this->addCombinator( 'noop', static function ( callable $test ): callable {
-			return static function ( $el ) use ( $test ) {
-				if ( call_user_func( $test, $el ) ) {
+			return static function ( $el, $opts ) use ( $test ) {
+				if ( call_user_func( $test, $el, $opts ) ) {
 					return $el;
 				}
 				return null;
@@ -909,16 +936,21 @@ class ZestInst {
 		} );
 	}
 
+	/**
+	 * @param callable(DOMNode,array):bool $test
+	 * @param string $name
+	 * @return ZestFunc
+	 */
 	private static function makeRef( callable $test, string $name ): ZestFunc {
 		$node = null;
-		$ref = new ZestFunc( function ( $el ) use ( &$node, &$ref ) : bool {
+		$ref = new ZestFunc( function ( $el, $opts ) use ( &$node, &$ref ) : bool {
 			$doc = $el->ownerDocument;
-			$nodes = self::getElementsByTagName( $doc, '*' );
+			$nodes = self::getElementsByTagName( $doc, '*', $opts );
 			$i = count( $nodes );
 
 			while ( $i-- ) {
 				$node = $nodes->item( $i );
-				if ( call_user_func( $ref->test->func, $el ) ) {
+				if ( call_user_func( $ref->test->func, $el, $opts ) ) {
 					$node = null;
 					return true;
 				}
@@ -928,7 +960,7 @@ class ZestInst {
 			return false;
 		} );
 
-		$ref->combinator = static function ( $el ) use ( &$node, $name, $test ) {
+		$ref->combinator = static function ( $el, $opts ) use ( &$node, $name, $test ) {
 			if ( !$node || $node->nodeType !== 1 /* Element */ ) {
 				return null;
 			}
@@ -939,7 +971,7 @@ class ZestInst {
 			}
 
 			$id = $node->getAttribute( 'id' ) ?: '';
-			if ( $attr === $id && call_user_func( $test, $node ) ) {
+			if ( $attr === $id && call_user_func( $test, $node, $opts ) ) {
 				return $node;
 			}
 			return null;
@@ -1082,7 +1114,7 @@ class ZestInst {
 		return $test;
 	}
 
-	/** @return callable(DOMNode):bool */
+	/** @return callable(DOMNode,array):bool */
 	private function tokQname( string $cap ): callable {
 		// qname
 		if ( $cap === '*' ) {
@@ -1092,7 +1124,7 @@ class ZestInst {
 		}
 	}
 
-	/** @return callable(DOMNode):bool */
+	/** @return callable(DOMNode,array):bool */
 	private function tok( array $cap ): callable {
 		// class/id
 		if ( $cap[ 1 ] ) {
@@ -1134,7 +1166,11 @@ class ZestInst {
 		throw new InvalidArgumentException( 'Unknown Selector.' );
 	}
 
-	// Returns true if all $func return true
+	/**
+	 * Returns true if all $func return true
+	 * @param array<callable(DOMNode,array):bool> $func
+	 * @return callable(DOMNode,array):bool
+	 */
 	private static function makeSimple( array $func ): callable {
 		$l = count( $func );
 
@@ -1144,9 +1180,9 @@ class ZestInst {
 			return $func[ 0 ];
 		}
 
-		return static function ( $el ) use ( $l, $func ): bool {
+		return static function ( $el, $opts ) use ( $l, $func ): bool {
 			for ( $i = 0;  $i < $l;  $i++ ) {
-				if ( !call_user_func( $func[ $i ], $el ) ) {
+				if ( !call_user_func( $func[ $i ], $el, $opts ) ) {
 					return false;
 				}
 			}
@@ -1154,17 +1190,21 @@ class ZestInst {
 		};
 	}
 
-	// Returns the element that all $func return
+	/**
+	 * Returns the element that all $func return
+	 * @param array<callable(DOMNode,array):(?DOMNode)> $func
+	 * @return ZestFunc
+	 */
 	private static function makeTest( array $func ): ZestFunc {
 		if ( count( $func ) < 2 ) {
-			return new ZestFunc( static function ( $el ) use ( $func ): bool {
-				return (bool)call_user_func( $func[ 0 ], $el );
+			return new ZestFunc( static function ( $el, $opts ) use ( $func ): bool {
+				return (bool)call_user_func( $func[ 0 ], $el, $opts );
 			} );
 		}
-		return new ZestFunc( static function ( $el ) use ( $func ): bool {
+		return new ZestFunc( static function ( $el, $opts ) use ( $func ): bool {
 			$i = count( $func );
 			while ( $i-- ) {
-				if ( !( $el = call_user_func( $func[ $i ], $el ) ) ) {
+				if ( !( $el = call_user_func( $func[ $i ], $el, $opts ) ) ) {
 					return false;
 				}
 			}
@@ -1172,16 +1212,20 @@ class ZestInst {
 		} );
 	}
 
+	/**
+	 * Return a skeleton ZestFunc for the caller to fill in.
+	 * @return ZestFunc
+	 */
 	private static function makeSubject(): ZestFunc {
 		$target = null;
 
-		$subject = new ZestFunc( function ( $el ) use ( &$subject, &$target ): bool {
+		$subject = new ZestFunc( function ( $el, $opts ) use ( &$subject, &$target ): bool {
 			$node = $el->ownerDocument;
-			$scope = self::getElementsByTagName( $node, $subject->lname );
+			$scope = self::getElementsByTagName( $node, $subject->lname, $opts );
 			$i = count( $scope );
 
 			while ( $i-- ) {
-				if ( call_user_func( $subject->test->func, $scope->item( $i ) ) && $target === $el ) {
+				if ( call_user_func( $subject->test->func, $scope->item( $i ), $opts ) && $target === $el ) {
 					$target = null;
 					return true;
 				}
@@ -1191,7 +1235,7 @@ class ZestInst {
 			return false;
 		} );
 
-		$subject->simple = static function ( $el ): bool {
+		$subject->simple = static function ( $el, $opts ) use ( &$target ): bool {
 			$target = $el;
 			return true;
 		};
@@ -1200,7 +1244,7 @@ class ZestInst {
 	}
 
 	/**
-	 * @return callable(DOMNode):bool|callable(DOMNode,DOMNode):bool
+	 * @return callable(DOMNode,array):bool|callable(DOMNode,DOMNode,array):bool
 	 */
 	private function compileGroup( string $sel ): callable {
 		$test = $this->compile( $sel );
@@ -1216,9 +1260,10 @@ class ZestInst {
 		}
 
 		// Optional "$ignore" parameter here lets this be passed to nth()
-		return static function ( $el, $ignore = null ) use ( $tests ): bool {
+		// which is done in the :nth-match selector
+		return static function ( $el, $opts ) use ( $tests ): bool {
 			for ( $i = 0, $l = count( $tests );  $i < $l;  $i++ ) {
-				if ( call_user_func( $tests[ $i ]->func, $el ) ) {
+				if ( call_user_func( $tests[ $i ]->func, $el, $opts ) ) {
 					return true;
 				}
 			}
@@ -1235,18 +1280,19 @@ class ZestInst {
 	/**
 	 * @param string $sel
 	 * @param DOMDocument|DOMElement $node
+	 * @param array $opts
 	 * @return DOMNode[]
 	 */
-	private function findInternal( string $sel, $node ): array {
+	private function findInternal( string $sel, $node, $opts ): array {
 		$results = [];
 		$test = $this->compile( $sel );
-		$scope = self::getElementsByTagName( $node, $test->qname );
+		$scope = self::getElementsByTagName( $node, $test->qname, $opts );
 		$i = 0;
 		$el = null;
 		$needsSort = false;
 
 		foreach ( $scope as $el ) {
-			if ( call_user_func( $test->func, $el ) ) {
+			if ( call_user_func( $test->func, $el, $opts ) ) {
 				$results[spl_object_id( $el )] = $el;
 			}
 		}
@@ -1255,9 +1301,9 @@ class ZestInst {
 			$needsSort = true;
 			while ( $test->sel ) {
 				$test = $this->compile( $test->sel );
-				$scope = self::getElementsByTagName( $node, $test->qname );
+				$scope = self::getElementsByTagName( $node, $test->qname, $opts );
 				foreach ( $scope as $el ) {
-					if ( call_user_func( $test->func, $el ) ) {
+					if ( call_user_func( $test->func, $el, $opts ) ) {
 						$results[spl_object_id( $el )] = $el;
 					}
 				}
@@ -1266,18 +1312,30 @@ class ZestInst {
 
 		$results = array_values( $results );
 		if ( $needsSort ) {
-			self::sort( $results );
+			self::sort( $results, $opts );
 		}
 		return $results;
 	}
 
 	/**
 	 * Find elements matching a CSS selector underneath $context.
+	 *
+	 * This search is exclusive; that is, `find(':scope', ...)` returns
+	 * no matches, although `:scope *` would return matches.
+	 *
 	 * @param string $sel The CSS selector string
 	 * @param DOMDocument|DOMElement $context The scope for the search
+	 * @param array $opts Additional match-context options (optional)
 	 * @return DOMElement[] Elements matching the CSS selector
 	 */
-	public function find( string $sel, $context ): array {
+	public function find( string $sel, $context, array $opts = [] ): array {
+		$doc = self::nodeIsDocument( $context ) ?
+			$context : $context->ownerDocument;
+		if ( !( $doc instanceof DOMDocument ) ) {
+			$opts += [ 'standardsMode' => true ];
+		}
+		$opts['scope'] = $context;
+
 		/* when context isn't a DocumentFragment and the selector is simple: */
 		if ( $context->nodeType !== 11 && strpos( $sel, ' ' ) === false ) {
 			// https://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
@@ -1298,33 +1356,45 @@ class ZestInst {
 				}
 				*/
 				$id = substr( $sel, 1 );
-				return self::getElementsById( $context, $id );
+				return self::getElementsById( $context, $id, $opts );
 			}
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
-				return iterator_to_array( self::getElementsByClassName( $context, substr( $sel, 1 ) ) );
+				return iterator_to_array( self::getElementsByClassName( $context, substr( $sel, 1 ), $opts ) );
 			}
 			if ( preg_match( '/^\w+$/', $sel ) ) {
-				return iterator_to_array( self::getElementsByTagName( $context, $sel ) );
+				return iterator_to_array( self::getElementsByTagName( $context, $sel, $opts ) );
 			}
 		}
 		/* do things the hard/slow way */
-		return $this->findInternal( $sel, $context );
+		return $this->findInternal( $sel, $context, $opts );
 	}
 
 	/**
 	 * Determine whether an element matches the given selector.
+	 *
+	 * This test is inclusive; that is, `matches($el, ':scope')`
+	 * returns true.
+	 *
 	 * @param DOMNode $el The element to be tested
 	 * @param string $sel The CSS selector string
+	 * @param array $opts Additional match-context options (optional)
 	 * @return bool True iff the element matches the selector
 	 */
-	public function matches( $el, string $sel ): bool {
-		$test = new ZestFunc( static function ( $el ):bool {
+	public function matches( $el, string $sel, array $opts = [] ): bool {
+		$doc = self::nodeIsDocument( $el ) ?
+			$el : $el->ownerDocument;
+		if ( !( $doc instanceof DOMDocument ) ) {
+			$opts += [ 'standardsMode' => true ];
+		}
+		$opts['scope'] = $el;
+
+		$test = new ZestFunc( static function ( $el, $opts ):bool {
 			return true;
 		} );
 		$test->sel = $sel;
 		do {
 			$test = $this->compile( $test->sel );
-			if ( call_user_func( $test->func, $el ) ) {
+			if ( call_user_func( $test->func, $el, $opts ) ) {
 				return true;
 			}
 		} while ( $test->sel );

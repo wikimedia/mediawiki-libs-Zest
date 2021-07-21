@@ -64,6 +64,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ "header + p", [ "/html[1]/body[1]/article[1]/p[1]" ] ],
 			[ "header ~ footer", [ "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/footer[1]" ] ],
 			[ ":root", [ "/html[1]" ] ],
+			[ ":scope", [ "/html[1]" ] ],
 			[ ":first-child", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/title[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]" ] ],
 			[ ":last-child", [ "/html[1]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/footer[1]/a[2]" ] ],
 			[ "header > :first-child", [ "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]" ] ],
@@ -167,6 +168,61 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function findTagProvider() {
+		return [ [ false ], [ true ] ];
+	}
+
+	/**
+	 * @dataProvider scopingProvider
+	 */
+	public function testScoping( bool $useRemex ) {
+		if ( $useRemex ) {
+			$doc = self::loadHTML( __DIR__ . "/index.html" );
+		} else {
+			$doc = new DOMDocument;
+			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+		}
+		// From https://drafts.csswg.org/selectors-4/#scoping-root :
+		// "When a selector is scoped, it matches an element only if
+		// the element is a descendant of the scoping root. (The rest
+		// of the selector can match unrestricted; it’s only the final
+		// matched elements that must be within the scope.)"
+		$scope = Zest::find( 'article.a > header', $doc )[0] ?? null;
+		$this->assertNotNull( $scope );
+		$testEl = Zest::find( 'body > article > header > h1 > a[href]', $scope );
+		$this->assertCount( 1, $testEl );
+		$testEl2 = Zest::find( 'body > article > header > h1 > a[href]', $doc );
+		$this->assertSame( $testEl2, $testEl );
+
+		$h1 = Zest::find( '*[id=hi]', $doc );
+		$this->assertCount( 1, $h1 );
+		$h1 = $h1[0];
+
+		// Basic usage:
+		// (Ideas from https://developer.mozilla.org/en-US/docs/Web/CSS/:scope )
+		$scope2 = Zest::find( ':scope', $scope );
+		$this->assertSame( [], $scope2 ); // find() is *exclusive*
+		$testEl3 = Zest::find( ':scope > h1 > a[href]', $scope );
+		$this->assertSame( $testEl3, $testEl );
+		// test the 'shortcuts'
+		$els = Zest::find( '#hi', $h1 );
+		$this->assertSame( $els, [] ); // *exclusive*
+		$els = Zest::find( 'h1', $h1 );
+		$this->assertSame( $els, [] ); // *exclusive*
+		$h1->setAttribute( 'class', 'shortcut' );
+		$els = Zest::find( '.shortcut', $h1 );
+		$this->assertSame( $els, [] ); // *exclusive*
+
+		// Test `matches` as well; these are *inclusive*
+		$this->assertTrue( Zest::matches( $scope, '*' ) );
+		$this->assertTrue( Zest::matches( $scope, 'header' ) );
+		$this->assertTrue( Zest::matches( $scope, ':scope' ) );
+		$this->assertFalse( Zest::matches( $scope, ':root' ) );
+		$this->assertTrue( Zest::matches( $h1, '#hi' ) );
+		$this->assertTrue( Zest::matches( $h1, 'h1' ) );
+		$this->assertTrue( Zest::matches( $h1, '.shortcut' ) );
+	}
+
+	public function scopingProvider() {
 		return [ [ false ], [ true ] ];
 	}
 
