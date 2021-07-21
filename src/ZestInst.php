@@ -1243,26 +1243,31 @@ class ZestInst {
 		$scope = self::getElementsByTagName( $node, $test->qname );
 		$i = 0;
 		$el = null;
+		$needsSort = false;
 
 		foreach ( $scope as $el ) {
 			if ( call_user_func( $test->func, $el ) ) {
-				$results[] = $el;
+				$results[spl_object_id( $el )] = $el;
 			}
 		}
 
 		if ( $test->sel ) {
+			$needsSort = true;
 			while ( $test->sel ) {
 				$test = $this->compile( $test->sel );
 				$scope = self::getElementsByTagName( $node, $test->qname );
 				foreach ( $scope as $el ) {
-					if ( call_user_func( $test->func, $el ) && !in_array( $el, $results, true ) ) {
-						$results[] = $el;
+					if ( call_user_func( $test->func, $el ) ) {
+						$results[spl_object_id( $el )] = $el;
 					}
 				}
 			}
-			self::sort( $results );
 		}
 
+		$results = array_values( $results );
+		if ( $needsSort ) {
+			self::sort( $results );
+		}
 		return $results;
 	}
 
