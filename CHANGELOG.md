@@ -1,9 +1,13 @@
 # zest-css x.x.x (not yet released)
 * Dependency updates
 * Add optional "options" argument to main entry points to allow passing
-  information to custom selectors, as well as to opt in to "standards
-  mode" where various PHP workarounds are disabled and additional features
-  are available.
+  information to custom selectors, as well as to opt in to disable certain
+  workaround and enable additional features.  Current "options" keys include:
+  * `standardsMode`: set to `true` for a spec-compliant DOM implementation
+  * `getElementsById`: pass a `callable(DOMNode,string):array` if your
+     DOM implementation can index multiple elements with the same id, or
+     `true` to force a slow full-tree search to guarantee that id selectors
+     can return multiple results.
 * Sort results in document order in standards mode.
 * Support `:scope` selector
 

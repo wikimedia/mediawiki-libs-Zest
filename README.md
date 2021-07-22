@@ -56,6 +56,8 @@ performant and correct versions of these:
 This is equivalent to the standard DOM method
 [`Document#getElementById()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/getElementById)
 (although you can use any context node, not just the top-level document).
+In addition, with the proper support from the DOM implementation, this can
+return more than one matching element.
 
 #### `Zest::getElementsByTagName( $contextNode, string $tagName, array $opts = [] ): DOMNodeList`
 This is equivalent to the standard DOM method [`Element#getElementsByTagName()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getElementsByTagName).

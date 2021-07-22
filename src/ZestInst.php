@@ -221,8 +221,13 @@ class ZestInst {
 
 	/**
 	 * Get descendants by ID.
+	 *
 	 * The PHP DOM doesn't provide this method for DOMElement, and the
 	 * implementation in DOMDocument is broken.
+	 *
+	 * Further, the web spec only provides for returning a single element
+	 * here.  This function can support returning *all* of the matches for
+	 * a given ID, if the underlying DOM implementation supports this.
 	 *
 	 * @param DOMDocument|DOMElement $context
 	 * @param string $id
@@ -231,6 +236,12 @@ class ZestInst {
 	 *   than one, this method might return all of them or only the first one.
 	 */
 	public static function getElementsById( $context, string $id, array $opts = [] ): array {
+		if ( is_callable( $opts['getElementsById'] ?? null ) ) {
+			// Third-party DOM implementation might provide a way to
+			// get multiple results for a given ID.
+			$func = $opts['getElementsById'];
+			return $func( $context, $id );
+		}
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
 		if ( !( $doc instanceof DOMDocument ) ) {
@@ -266,8 +277,8 @@ class ZestInst {
 		if ( $opts['standardsMode'] ?? false ) {
 			// The workaround below only works (and is only necessary!)
 			// when this is a PHP-provided \DOMDocument.  For 3rd-party
-			// DOM implementations, we don't have to go through this
-			// mess.
+			// DOM implementations, we assume that getElementById() was
+			// reliable.
 			return [];
 		}
 		// Do an xpath search, which is still a full traversal of the tree
@@ -1341,22 +1352,16 @@ class ZestInst {
 			// https://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
 			// Valid identifiers starting with a hyphen or with escape
 			// sequences will be handled correctly by the fall-through case.
-			if ( $sel[ 0 ] === '#' /*&& $context->rooted*/ && preg_match( '/^#[A-Za-z_](?:[-A-Za-z0-9_]|[^\0-\237])*$/Su', $sel ) ) {
-				// Note that the PHP implementation can't detect the case
-				// where there are multiple elements with the same ID. Alas.
-				// XXX define a "standard" backdoor for this for 3rd party
-				// DOM implementations?
-				/*
-				if ( $context->doc->_hasMultipleElementsWithId ) {
-					$id = $sel->substring( 1 );
-					if ( !$context->doc->_hasMultipleElementsWithId( $id ) ) {
-						$r = $context->doc->getElementById( $id );
-						return ( $r ) ? [ $r ] : [];
-					}
+			if ( $sel[ 0 ] === '#' && preg_match( '/^#[A-Za-z_](?:[-A-Za-z0-9_]|[^\0-\237])*$/Su', $sel ) ) {
+				// Setting 'getElementsById' to `true` disables this
+				// optimization and forces the hard/slow search in
+				// order to guarantee that multiple elements will be
+				// returned if there are multiple elements in the
+				// $context with the given id.
+				if ( ( $opts['getElementsById'] ?? null ) !== true ) {
+					$id = substr( $sel, 1 );
+					return self::getElementsById( $context, $id, $opts );
 				}
-				*/
-				$id = substr( $sel, 1 );
-				return self::getElementsById( $context, $id, $opts );
 			}
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
 				return iterator_to_array( self::getElementsByClassName( $context, substr( $sel, 1 ), $opts ) );

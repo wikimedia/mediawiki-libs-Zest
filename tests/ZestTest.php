@@ -226,6 +226,44 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		return [ [ false ], [ true ] ];
 	}
 
+	/**
+	 * @dataProvider multiIdProvider
+	 */
+	public function testMultiId( bool $useRemex, bool $useCallable ) {
+		if ( $useRemex ) {
+			$doc = self::loadHTML( __DIR__ . "/index.html" );
+		} else {
+			$doc = new DOMDocument;
+			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+		}
+		$els = Zest::find( 'nav li', $doc );
+		$this->assertCount( 5, $els );
+		foreach ( $els as $el ) {
+			$el->setAttribute( 'id', 'samesame' );
+		}
+		$opts = $useCallable ? [
+			'getElementsById' => static function ( $context, $id ) use ( $els ) {
+				return $els;
+			},
+		] : [ 'getElementsById' => true ];
+		// Test the "fast path"
+		$result1 = Zest::find( '#samesame', $doc, $opts );
+		$this->assertCount( 5, $result1 );
+		$this->assertSame( $result1, $els );
+		// Test the "slow path"
+		$result2 = Zest::find( "nav > ul > #samesame", $doc, $opts );
+		$this->assertCount( 5, $result2 );
+		$this->assertSame( $result2, $els );
+	}
+
+	public function multiIdProvider() {
+		for ( $i = 0; $i < 4; $i++ ) {
+			$remex = ( $i & 1 ) !== 0;
+			$callable = ( $i & 2 ) !== 0;
+			yield [ $remex, $callable ];
+		}
+	}
+
 	public static function toXPath( $node ) {
 		// which child of parent is this?
 		$parent = $node->parentNode;
