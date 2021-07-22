@@ -36,6 +36,13 @@ which affect match results.  This are available from within custom selectors
 options:
 * `standardsMode` (`bool`): if present and true, various PHP workarounds
   will be disabled in favor of calling methods defined in web standards.
+* `getElementsById` (`true|callable(DOMNode,string):array<DOMElement>`):
+  if set to `true` then an optimization will be disabled to ensure that
+  Zest can return multiple elements for ID selectors if IDs are not unique
+  in the document.  If set to a `callable` that takes a context node and
+  an ID string and returns an array of Elements, a third-party DOM
+  implementation can support an efficient index allowing multiple
+  elements to share the same ID.
 
 #### `Zest::find( string $selector, $context, array $opts = [] ): array`</dt>
 This is equivalent to the standard
