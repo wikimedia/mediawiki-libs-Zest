@@ -839,6 +839,17 @@ class ZestInst {
 			return strpos( $attr, $val ) !== false;
 		} );
 		$this->addOperator( '~=', static function ( string $attr, string $val ): bool {
+			// https://drafts.csswg.org/selectors-4/#attribute-representation
+			// 	If "val" contains whitespace, it will never represent
+			// 	anything (since the words are separated by spaces)
+			if ( strcspn( $val, " \t\r\n\f" ) !== strlen( $val ) ) {
+				return false;
+			}
+			// Also if "val" is the empty string, it will never
+			// 	represent anything.
+			if ( strlen( $val ) === 0 ) {
+				return false;
+			}
 			$attrLen = strlen( $attr );
 			$valLen = strlen( $val );
 			for ( $s = 0;  $s < $attrLen;  $s = $i + 1 ) {
@@ -849,6 +860,8 @@ class ZestInst {
 				$j = $i + $valLen;
 				$f = ( $i === 0 ) ? ' ' : $attr[ $i - 1 ];
 				$l = ( $j >= $attrLen ) ? ' ' : $attr[ $j ];
+				$f = strtr( $f, "\t\r\n\f", "    " );
+				$l = strtr( $l, "\t\r\n\f", "    " );
 				if ( $f === ' ' && $l === ' ' ) {
 					return true;
 				}

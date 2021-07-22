@@ -10,6 +10,8 @@
      can return multiple results.
 * Sort results in document order in standards mode.
 * Support `:scope` selector
+* Bug fixes to ~= operator, which now accepts non-space whitespace as a
+  separator and is stricter about match targets containing whitespace
 
 # zest-css 1.1.5 (2021-03-23)
 * Dependency updates
