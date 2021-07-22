@@ -400,7 +400,7 @@ class ZestInst {
 				// but that's the only way we invoke it.
 				".$className",
 				$opts,
-				function ( $el ) use ( $className, $opts ) : array {
+				function ( $el ) use ( $className, $opts ): array {
 					return self::getElementsByClassName( $el, $className, $opts );
 				}
 			);
@@ -549,7 +549,7 @@ class ZestInst {
 				&& self::parentIsElement( $el );
 		} );
 		$this->addSelector1( ':nth-child', function ( string $param, bool $last = false ): callable {
-			return self::nth( $param, static function ( $rel, $el, $opts ):bool {
+			return self::nth( $param, static function ( $rel, $el, $opts ): bool {
 				return true;
 			}, $last );
 		} );
@@ -598,7 +598,7 @@ class ZestInst {
 				$this->selectors0[ ':last-of-type' ]( $el, $opts );
 		} );
 		$this->addSelector1( ':nth-of-type', function ( string $param, bool $last = false ): callable  {
-			return self::nth( $param, static function ( $rel, $el, $opts ):bool {
+			return self::nth( $param, static function ( $rel, $el, $opts ): bool {
 				return $rel->nodeName === $el->nodeName;
 			}, $last );
 		} );
@@ -659,7 +659,7 @@ class ZestInst {
 			$arg = array_shift( $args );
 			$test = self::compileGroup( implode( ',', $args ) );
 
-			return self::nth( $arg, static function ( $rel, $el, $opts ) use ( $test ):bool {
+			return self::nth( $arg, static function ( $rel, $el, $opts ) use ( $test ): bool {
 				return call_user_func( $test, $el, $opts );
 			}, $last );
 		} );
@@ -734,7 +734,7 @@ class ZestInst {
 			return $el->willValidate || ( $el->validity && $el->validity->valid );
 		});
 		*/
-		$this->addSelector0( ':invalid', function ( $el, $opts ):bool {
+		$this->addSelector0( ':invalid', function ( $el, $opts ): bool {
 				return !$this->selectors0[ ':valid' ]( $el, $opts );
 		} );
 		/*
@@ -1045,7 +1045,7 @@ class ZestInst {
 	 */
 	private static function makeRef( callable $test, string $name ): ZestFunc {
 		$node = null;
-		$ref = new ZestFunc( function ( $el, $opts ) use ( &$node, &$ref ) : bool {
+		$ref = new ZestFunc( function ( $el, $opts ) use ( &$node, &$ref ): bool {
 			$doc = $el->ownerDocument;
 			$nodes = self::getElementsByTagName( $doc, '*', $opts );
 			$i = count( $nodes );
@@ -1498,7 +1498,7 @@ class ZestInst {
 		}
 		$opts['scope'] = $el;
 
-		$test = new ZestFunc( static function ( $el, $opts ):bool {
+		$test = new ZestFunc( static function ( $el, $opts ): bool {
 			return true;
 		} );
 		$test->sel = $sel;

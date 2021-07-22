@@ -59,7 +59,7 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 			$context = $frag;
 		}
 		// Wrapper to access private function
-		$func = static function ( string $sel, array $opts = [] ) use ( $context ):array {
+		$func = static function ( string $sel, array $opts = [] ) use ( $context ): array {
 			return TestingAccessWrapper::newFromObject( new ZestInst )
 				->getElementsByClassName( $context, $sel, $opts );
 		};
