@@ -62,11 +62,11 @@ class Zest {
 	 *   The scoping root for the search
 	 * @param string $id
 	 * @param array $opts Additional match-context options (optional)
-	 * @return array A list of the elements with the given ID. When there are more
+	 * @return array<DOMElement> A list of the elements with the given ID. When there are more
 	 *   than one, this method might return all of them or only the first one.
 	 */
 	public static function getElementsById( $context, string $id, array $opts = [] ): array {
-		return ZestInst::getElementsById( $context, $id, $opts );
+		return self::singleton()->getElementsById( $context, $id, $opts );
 	}
 
 	/**
@@ -77,10 +77,10 @@ class Zest {
 	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 * @param string $tagName
 	 * @param array $opts Additional match-context options (optional)
-	 * @return array
+	 * @return array<DOMElement>
 	 */
 	public static function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
-		return ZestInst::getElementsByTagName( $context, $tagName, $opts );
+		return self::singleton()->getElementsByTagName( $context, $tagName, $opts );
 	}
 
 }

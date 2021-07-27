@@ -13,6 +13,9 @@
      can return multiple results.
   * Return types which were DOMNodeList have been changed to generic array
     types, to accomodate workarounds needed by the PHP dom library.
+  * The ::getElementsById and ::getElementsByTagName methods on ZestInst
+    are now virtual (not static) to allow clients to subclass and override
+    them if more efficient implementations are available.
 * Clients can now subclass ZestInst and override
   `ZestInst::newBadSelectorException()` in order to customize the exception
   that is thrown when a selector parse error occurs.

@@ -232,14 +232,19 @@ class ZestInst {
 	 * here.  This function can support returning *all* of the matches for
 	 * a given ID, if the underlying DOM implementation supports this.
 	 *
+	 * Although a `getElementsById` key can be passed in the options array
+	 * to override the default implementation, for efficiency it is recommended
+	 * that clients subclass ZestInst and override this entire method if
+	 * they can provide an efficient id index.
+	 *
 	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 *   The scoping root for the search
 	 * @param string $id
 	 * @param array $opts Additional match-context options (optional)
-	 * @return array A list of the elements with the given ID. When there are more
+	 * @return array<DOMElement> A list of the elements with the given ID. When there are more
 	 *   than one, this method might return all of them or only the first one.
 	 */
-	public static function getElementsById( $context, string $id, array $opts = [] ): array {
+	public function getElementsById( $context, string $id, array $opts = [] ): array {
 		if ( is_callable( $opts['getElementsById'] ?? null ) ) {
 			// Third-party DOM implementation might provide a way to
 			// get multiple results for a given ID.
@@ -292,7 +297,7 @@ class ZestInst {
 			// For disconnected Elements and DocumentFragments, we need
 			// to do this the hard/slow way
 			$r = [];
-			foreach ( self::getElementsByTagName( $context, '*', $opts ) as $el ) {
+			foreach ( $this->getElementsByTagName( $context, '*', $opts ) as $el ) {
 				if ( $id === ( $el->getAttribute( 'id' ) ?? '' ) ) {
 					$r[] = $el;
 				}
@@ -333,12 +338,15 @@ class ZestInst {
 	 * The PHP DOM doesn't provide this method for DOMElement, and the
 	 * implementation in DOMDocument has performance issues.
 	 *
+	 * Clients can subclass and override this to provide a more efficient
+	 * implementation if one is available.
+	 *
 	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 * @param string $tagName
 	 * @param array $opts Additional match-context options (optional)
-	 * @return array
+	 * @return array<DOMElement>
 	 */
-	public static function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
+	public function getElementsByTagName( $context, string $tagName, array $opts = [] ) {
 		if ( $context->nodeType === 11 /* DocumentFragment */ ) {
 			// DOM standards don't define getElementsByTagName on
 			// DocumentFragment, and XPath supports it but has a bug which
@@ -346,7 +354,7 @@ class ZestInst {
 			return self::docFragHelper(
 				$context, $tagName, $opts,
 				function ( $el ) use ( $tagName, $opts ): array {
-					return self::getElementsByTagName( $el, $tagName, $opts );
+					return $this->getElementsByTagName( $el, $tagName, $opts );
 				}
 			);
 		}
@@ -1043,11 +1051,11 @@ class ZestInst {
 	 * @param string $name
 	 * @return ZestFunc
 	 */
-	private static function makeRef( callable $test, string $name ): ZestFunc {
+	private function makeRef( callable $test, string $name ): ZestFunc {
 		$node = null;
 		$ref = new ZestFunc( function ( $el, $opts ) use ( &$node, &$ref ): bool {
 			$doc = $el->ownerDocument;
-			$nodes = self::getElementsByTagName( $doc, '*', $opts );
+			$nodes = $this->getElementsByTagName( $doc, '*', $opts );
 			$i = count( $nodes );
 
 			while ( $i-- ) {
@@ -1165,7 +1173,7 @@ class ZestInst {
 
 			if ( $sel && $sel[ 0 ] === '!' ) {
 				$sel = substr( $sel, 1 );
-				$subject = self::makeSubject();
+				$subject = $this->makeSubject();
 				$subject->qname = $qname;
 				$buff[] = $subject->simple;
 			}
@@ -1173,7 +1181,7 @@ class ZestInst {
 			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->ref, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
-				$ref = self::makeRef( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
+				$ref = $this->makeRef( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
 				$filter[] = $ref->combinator;
 				$buff = [];
 				continue;
@@ -1330,12 +1338,12 @@ class ZestInst {
 	 * Return a skeleton ZestFunc for the caller to fill in.
 	 * @return ZestFunc
 	 */
-	private static function makeSubject(): ZestFunc {
+	private function makeSubject(): ZestFunc {
 		$target = null;
 
 		$subject = new ZestFunc( function ( $el, $opts ) use ( &$subject, &$target ): bool {
 			$node = $el->ownerDocument;
-			$scope = self::getElementsByTagName( $node, $subject->lname, $opts );
+			$scope = $this->getElementsByTagName( $node, $subject->lname, $opts );
 			$i = count( $scope );
 
 			while ( $i-- ) {
@@ -1401,7 +1409,7 @@ class ZestInst {
 	private function findInternal( string $sel, $node, $opts ): array {
 		$results = [];
 		$test = $this->compile( $sel );
-		$scope = self::getElementsByTagName( $node, $test->qname, $opts );
+		$scope = $this->getElementsByTagName( $node, $test->qname, $opts );
 		$i = 0;
 		$el = null;
 		$needsSort = false;
@@ -1416,7 +1424,7 @@ class ZestInst {
 			$needsSort = true;
 			while ( $test->sel ) {
 				$test = $this->compile( $test->sel );
-				$scope = self::getElementsByTagName( $node, $test->qname, $opts );
+				$scope = $this->getElementsByTagName( $node, $test->qname, $opts );
 				foreach ( $scope as $el ) {
 					if ( call_user_func( $test->func, $el, $opts ) ) {
 						$results[spl_object_id( $el )] = $el;
@@ -1465,14 +1473,14 @@ class ZestInst {
 				// $context with the given id.
 				if ( ( $opts['getElementsById'] ?? null ) !== true ) {
 					$id = substr( $sel, 1 );
-					return self::getElementsById( $context, $id, $opts );
+					return $this->getElementsById( $context, $id, $opts );
 				}
 			}
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
 				return self::getElementsByClassName( $context, substr( $sel, 1 ), $opts );
 			}
 			if ( preg_match( '/^\w+$/', $sel ) ) {
-				return self::getElementsByTagName( $context, $sel, $opts );
+				return $this->getElementsByTagName( $context, $sel, $opts );
 			}
 		}
 		/* do things the hard/slow way */
