@@ -392,12 +392,15 @@ class ZestInst {
 	}
 
 	/**
-	 * @param DOMNode $context
+	 * Clients can subclass and override this to provide a more efficient
+	 * implementation if one is available.
+	 *
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 * @param string $className
 	 * @param array $opts
-	 * @return array
+	 * @return array<DOMElement>
 	 */
-	private static function getElementsByClassName( $context, string $className, $opts ) {
+	protected function getElementsByClassName( $context, string $className, $opts ) {
 		if ( $context->nodeType === 11 /* DocumentFragment */ ) {
 			// DOM standards don't define getElementsByClassName on
 			// DocumentFragment, and XPath supports it but has a bug which
@@ -409,7 +412,7 @@ class ZestInst {
 				".$className",
 				$opts,
 				function ( $el ) use ( $className, $opts ): array {
-					return self::getElementsByClassName( $el, $className, $opts );
+					return $this->getElementsByClassName( $el, $className, $opts );
 				}
 			);
 		}
@@ -1477,7 +1480,7 @@ class ZestInst {
 				}
 			}
 			if ( $sel[ 0 ] === '.' && preg_match( '/^\.\w+$/', $sel ) ) {
-				return self::getElementsByClassName( $context, substr( $sel, 1 ), $opts );
+				return $this->getElementsByClassName( $context, substr( $sel, 1 ), $opts );
 			}
 			if ( preg_match( '/^\w+$/', $sel ) ) {
 				return $this->getElementsByTagName( $context, $sel, $opts );
