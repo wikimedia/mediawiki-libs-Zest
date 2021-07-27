@@ -74,7 +74,7 @@ class Zest {
 	 * The PHP DOM doesn't provide this method for DOMElement, and the
 	 * implementation in DOMDocument has performance issues.
 	 *
-	 * @param DOMDocument|DOMElement $context
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 * @param string $tagName
 	 * @param array $opts Additional match-context options (optional)
 	 * @return array
