@@ -44,6 +44,10 @@ options:
   implementation can support an efficient index allowing multiple
   elements to share the same ID.
 
+All methods will throw the exception returned by
+ `ZestInst::newBadSelectorException()` (by default, a new
+ `InvalidArgumentException`) if the selector fails to parse.
+
 #### `Zest::find( string $selector, $context, array $opts = [] ): array`</dt>
 This is equivalent to the standard
 DOM method [`ParentNode#querySelectorAll()`](https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/querySelectorAll).

@@ -6,8 +6,8 @@ use DOMDocument;
 use DOMDocumentFragment;
 use DOMElement;
 use DOMNode;
-use Error;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Zest.php (https://github.com/wikimedia/zest.php)
@@ -768,35 +768,35 @@ class ZestInst {
 		$this->addSelector0( ':read-write', function ( $el, $opts ): bool {
 			return !$this->selectors0[ ':read-only' ]( $el, $opts );
 		} );
-		$this->addSelector0( ':hover', static function ( $el, $opts ): bool {
-			throw new Error( ':hover is not supported.' );
+		$this->addSelector0( ':hover', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':hover is not supported.' );
 		} );
-		$this->addSelector0( ':active', static function ( $el, $opts ): bool {
-			throw new Error( ':active is not supported.' );
+		$this->addSelector0( ':active', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':active is not supported.' );
 		} );
-		$this->addSelector0( ':link', static function ( $el, $opts ): bool {
-			throw new Error( ':link is not supported.' );
+		$this->addSelector0( ':link', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':link is not supported.' );
 		} );
-		$this->addSelector0( ':visited', static function ( $el, $opts ): bool {
-			throw new Error( ':visited is not supported.' );
+		$this->addSelector0( ':visited', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':visited is not supported.' );
 		} );
-		$this->addSelector0( ':column', static function ( $el, $opts ): bool {
-			throw new Error( ':column is not supported.' );
+		$this->addSelector0( ':column', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':column is not supported.' );
 		} );
-		$this->addSelector0( ':nth-column', static function ( $el, $opts ): bool {
-			throw new Error( ':nth-column is not supported.' );
+		$this->addSelector0( ':nth-column', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':nth-column is not supported.' );
 		} );
-		$this->addSelector0( ':nth-last-column', static function ( $el, $opts ): bool {
-			throw new Error( ':nth-last-column is not supported.' );
+		$this->addSelector0( ':nth-last-column', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':nth-last-column is not supported.' );
 		} );
-		$this->addSelector0( ':current', static function ( $el, $opts ): bool {
-			throw new Error( ':current is not supported.' );
+		$this->addSelector0( ':current', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':current is not supported.' );
 		} );
-		$this->addSelector0( ':past', static function ( $el, $opts ): bool {
-			throw new Error( ':past is not supported.' );
+		$this->addSelector0( ':past', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':past is not supported.' );
 		} );
-		$this->addSelector0( ':future', static function ( $el, $opts ): bool {
-			throw new Error( ':future is not supported.' );
+		$this->addSelector0( ':future', function ( $el, $opts ): bool {
+			throw $this->newBadSelectorException( ':future is not supported.' );
 		} );
 		// Non-standard, for compatibility purposes.
 		$this->addSelector1( ':contains', static function ( string $param ): callable {
@@ -1154,7 +1154,7 @@ class ZestInst {
 				$buff[] = $this->tokQname( $qname );
 				$buff[] = $this->tok( $cap );
 			} else {
-				throw new InvalidArgumentException( 'Invalid selector.' );
+				throw $this->newBadSelectorException( 'Invalid selector.' );
 			}
 
 			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
@@ -1192,7 +1192,7 @@ class ZestInst {
 			}
 
 			if ( !isset( $this->combinators[ $op ] ) ) {
-				throw new InvalidArgumentException( 'Bad combinator: ' . $op );
+				throw $this->newBadSelectorException( 'Bad combinator: ' . $op );
 			}
 			$filter[] = $this->combinators[ $op ]( self::makeSimple( $buff ) );
 			$buff = [];
@@ -1254,12 +1254,12 @@ class ZestInst {
 			$id = self::decodeid( $cap[ 2 ] );
 			if ( isset( $cap[3] ) && $cap[ 3 ] ) {
 				if ( !isset( $this->selectors1[ $id ] ) ) {
-					throw new InvalidArgumentException( "Unknown Selector: $id" );
+					throw $this->newBadSelectorException( "Unknown Selector: $id" );
 				}
 				return $this->selectors1[ $id ]( self::unquote( $cap[ 3 ] ) );
 			} else {
 				if ( !isset( $this->selectors0[ $id ] ) ) {
-					throw new InvalidArgumentException( "Unknown Selector: $id" );
+					throw $this->newBadSelectorException( "Unknown Selector: $id" );
 				}
 				return $this->selectors0[ $id ];
 			}
@@ -1277,7 +1277,7 @@ class ZestInst {
 			return $this->selectorsAttr( self::decodeid( $cap[ 4 ] ), $cap[ 5 ] ?? '-', self::unquote( $value ), (bool)$i );
 		}
 
-		throw new InvalidArgumentException( 'Unknown Selector.' );
+		throw $this->newBadSelectorException( 'Unknown Selector.' );
 	}
 
 	/**
@@ -1511,10 +1511,24 @@ class ZestInst {
 		return false;
 	}
 
+	/**
+	 * Allow customization of the exception thrown for a bad selector.
+	 * @param string $msg Description of the failure
+	 * @return Throwable
+	 */
+	protected function newBadSelectorException( string $msg ): Throwable {
+		return new InvalidArgumentException( $msg );
+	}
+
 	/** @var ?ZestInst */
 	private static $singleton = null;
 
-	function __construct() {
+	/**
+	 * Create a new instance of Zest.  Custom combinators and selectors
+	 * registered for each instance of Zest do not bleed
+	 * over into other instances.
+	 */
+	public function __construct() {
 		$z = self::$singleton;
 		$this->selectors0 = $z ? $z->selectors0 : [];
 		$this->selectors1 = $z ? $z->selectors1 : [];

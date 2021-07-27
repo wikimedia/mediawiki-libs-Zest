@@ -13,6 +13,9 @@
      can return multiple results.
   * Return types which were DOMNodeList have been changed to generic array
     types, to accomodate workarounds needed by the PHP dom library.
+* Clients can now subclass ZestInst and override
+  `ZestInst::newBadSelectorException()` in order to customize the exception
+  that is thrown when a selector parse error occurs.
 * Sort results in document order in standards mode.
 * Support `:scope` selector
 * Bug fixes to ~= operator, which now accepts non-space whitespace as a
