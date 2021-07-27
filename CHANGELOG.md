@@ -20,6 +20,9 @@
 * Clients can now subclass ZestInst and override
   `ZestInst::newBadSelectorException()` in order to customize the exception
   that is thrown when a selector parse error occurs.
+* Clients can now subclass ZestInst and override
+  `ZestInst::isStandardsMode()` in order to force Zest into standards mode
+  (or not).
 * Sort results in document order in standards mode.
 * Support `:scope` selector
 * Bug fixes to ~= operator, which now accepts non-space whitespace as a

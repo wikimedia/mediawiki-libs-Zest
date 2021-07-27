@@ -29,12 +29,13 @@ class ZestInst {
 	/**
 	 * Sort query results in document order.
 	 * @param array &$results
+	 * @param bool $isStandardsMode
 	 */
-	private static function sort( &$results, array $opts ) {
+	private static function sort( &$results, bool $isStandardsMode ): void {
 		if ( count( $results ) < 2 ) {
 			return;
 		}
-		if ( $opts['standardsMode'] ?? false ) {
+		if ( $isStandardsMode ) {
 			// DOM spec-compliant version:
 			usort( $results, static function ( $a, $b ) {
 				return ( $a->compareDocumentPosition( $b ) & 2 ) ? 1 : -1;
@@ -253,17 +254,14 @@ class ZestInst {
 			$func = $opts['getElementsById'];
 			return $func( $context, $id );
 		}
-		$doc = self::nodeIsDocument( $context ) ?
-			$context : $context->ownerDocument;
-		if ( !( $doc instanceof DOMDocument ) ) {
-			$opts += [ 'standardsMode' => true ];
-		}
 		// Neither PHP nor the web standards provide an DOMElement-scoped
 		// version of getElementById, so we can't call this directly on
 		// $context -- but that's okay because (1) IDs should be unique, and
 		// (2) we verify the scope of the returned element below
 		// anyway (to work around bugs with deleted-but-not-gc'ed
 		// nodes).
+		$doc = self::nodeIsDocument( $context ) ?
+			$context : $context->ownerDocument;
 		$r = $doc->getElementById( $id );
 		// Note that $r could be null here because the
 		// DOMDocument hasn't had an "id attribute" set, even if the id
@@ -285,7 +283,7 @@ class ZestInst {
 			// shadowing a later-added element, so we can't return
 			// null here directly; fallback to a full search.
 		}
-		if ( $opts['standardsMode'] ?? false ) {
+		if ( $this->isStandardsMode( $context, $opts ) ) {
 			// The workaround below only works (and is only necessary!)
 			// when this is a PHP-provided \DOMDocument.  For 3rd-party
 			// DOM implementations, we assume that getElementById() was
@@ -358,12 +356,7 @@ class ZestInst {
 				}
 			);
 		}
-		$doc = self::nodeIsDocument( $context ) ?
-			$context : $context->ownerDocument;
-		if ( !( $doc instanceof DOMDocument ) ) {
-			$opts += [ 'standardsMode' => true ];
-		}
-		if ( $opts['standardsMode'] ?? false ) {
+		if ( $this->isStandardsMode( $context, $opts ) ) {
 			// For third-party DOM implementations, just use native func.
 			return iterator_to_array(
 				$context->getElementsByTagName( $tagName )
@@ -378,6 +371,8 @@ class ZestInst {
 		// the DOM spec says it should report uppercase)
 		$tagName = strtolower( $tagName );
 
+		$doc = self::nodeIsDocument( $context ) ?
+			$context : $context->ownerDocument;
 		$xpath = new \DOMXPath( $doc );
 		$ns = $doc->documentElement === null ? 'force use of local-name' :
 			$doc->documentElement->namespaceURI;
@@ -416,12 +411,7 @@ class ZestInst {
 				}
 			);
 		}
-		$doc = self::nodeIsDocument( $context ) ?
-			$context : $context->ownerDocument;
-		if ( !( $doc instanceof DOMDocument ) ) {
-			$opts += [ 'standardsMode' => true ];
-		}
-		if ( $opts['standardsMode'] ?? false ) {
+		if ( $this->isStandardsMode( $context, $opts ) ) {
 			// For third-party DOM implementations, just use native func.
 			return iterator_to_array(
 				// @phan-suppress-next-line PhanUndeclaredMethod
@@ -433,6 +423,8 @@ class ZestInst {
 		// to quickly get results.  (It would be faster still if there was an
 		// actual index, but this will be about 25% faster than doing the
 		// tree traversal all in PHP.)
+		$doc = self::nodeIsDocument( $context ) ?
+			$context : $context->ownerDocument;
 		$xpath = new \DOMXPath( $doc );
 		$quotedClassName = self::xpathQuote( " $className " );
 		$query = ".//*[contains(concat(' ', normalize-space(@class), ' '), $quotedClassName)]";
@@ -618,9 +610,9 @@ class ZestInst {
 			return $this->selectors1[ ':nth-of-type' ]( $param, true );
 		} );
 		/** @suppress PhanUndeclaredProperty not defined in PHP DOM */
-		$this->addSelector0( ':checked', static function ( $el, $opts ): bool {
+		$this->addSelector0( ':checked', function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
-			if ( $opts['standardsMode'] ?? false ) {
+			if ( $this->isStandardsMode( $el, $opts ) ) {
 				// These properties don't exist in the PHP DOM, and in fact
 				// they are supposed to reflect the *dynamic* state of the
 				// widget, not the 'default' state (which is given by the
@@ -636,9 +628,9 @@ class ZestInst {
 			return !$this->selectors0[ ':checked' ]( $el, $opts );
 		} );
 		/** @suppress PhanUndeclaredProperty not defined in PHP DOM */
-		$this->addSelector0( ':enabled', static function ( $el, $opts ): bool {
+		$this->addSelector0( ':enabled', function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
-			if ( ( $opts['standardsMode'] ?? false ) && isset( $el->type ) ) {
+			if ( $this->isStandardsMode( $el, $opts ) && isset( $el->type ) ) {
 				$type = $el->type; // this does case normalization in spec
 			} else {
 				$type = $el->getAttribute( 'type' );
@@ -1438,7 +1430,7 @@ class ZestInst {
 
 		$results = array_values( $results );
 		if ( $needsSort ) {
-			self::sort( $results, $opts );
+			 self::sort( $results, $this->isStandardsMode( $node, $opts ) );
 		}
 		return $results;
 	}
@@ -1456,11 +1448,6 @@ class ZestInst {
 	 * @return DOMElement[] Elements matching the CSS selector
 	 */
 	public function find( string $sel, $context, array $opts = [] ): array {
-		$doc = self::nodeIsDocument( $context ) ?
-			$context : $context->ownerDocument;
-		if ( !( $doc instanceof DOMDocument ) ) {
-			$opts += [ 'standardsMode' => true ];
-		}
 		$opts['scope'] = $context;
 
 		/* when context isn't a DocumentFragment and the selector is simple: */
@@ -1502,11 +1489,6 @@ class ZestInst {
 	 * @return bool True iff the element matches the selector
 	 */
 	public function matches( $el, string $sel, array $opts = [] ): bool {
-		$doc = self::nodeIsDocument( $el ) ?
-			$el : $el->ownerDocument;
-		if ( !( $doc instanceof DOMDocument ) ) {
-			$opts += [ 'standardsMode' => true ];
-		}
 		$opts['scope'] = $el;
 
 		$test = new ZestFunc( static function ( $el, $opts ): bool {
@@ -1529,6 +1511,27 @@ class ZestInst {
 	 */
 	protected function newBadSelectorException( string $msg ): Throwable {
 		return new InvalidArgumentException( $msg );
+	}
+
+	/**
+	 * Allow subclasses to force Zest into "standards mode" (or not).
+	 * The default implementation looks for a 'standardsMode' key in the
+	 * option and if that is not present switches to standards mode if
+	 * the ownerDocument of the given node is not a \DOMDocument.
+	 * @param DOMNode $context a context node
+	 * @param array $opts The zest options array pased to ::find, ::matches, etc
+	 * @return bool True for standards mode, otherwise false.
+	 */
+	protected function isStandardsMode( $context, array $opts ): bool {
+		// The $opts array can force a specific mode, if key is present
+		if ( array_key_exists( 'standardsMode', $opts ) ) {
+			return (bool)$opts['standardsMode'];
+		}
+		// Otherwise guess "not standard mode" if the node document is a
+		// \DOMDocument, otherwise use standards mode.
+		$doc = self::nodeIsDocument( $context ) ?
+			 $context : $context->ownerDocument;
+		return ( $doc instanceof DOMDocument ) ? false : true;
 	}
 
 	/** @var ?ZestInst */
