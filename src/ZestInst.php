@@ -233,6 +233,9 @@ class ZestInst {
 	 * here.  This function can support returning *all* of the matches for
 	 * a given ID, if the underlying DOM implementation supports this.
 	 *
+	 * This is an *exclusive* query; that is, $context should never be included
+	 * among the results.
+	 *
 	 * Although a `getElementsById` key can be passed in the options array
 	 * to override the default implementation, for efficiency it is recommended
 	 * that clients subclass ZestInst and override this entire method if
@@ -336,6 +339,9 @@ class ZestInst {
 	 * The PHP DOM doesn't provide this method for DOMElement, and the
 	 * implementation in DOMDocument has performance issues.
 	 *
+	 * This is an *exclusive* query; that is, $context should never be included
+	 * among the results.
+	 *
 	 * Clients can subclass and override this to provide a more efficient
 	 * implementation if one is available.
 	 *
@@ -389,6 +395,9 @@ class ZestInst {
 	/**
 	 * Clients can subclass and override this to provide a more efficient
 	 * implementation if one is available.
+	 *
+	 * This is an *exclusive* query; that is, $context should never be included
+	 * among the results.
 	 *
 	 * @param DOMDocument|DOMDocumentFragment|DOMElement $context
 	 * @param string $className

@@ -33,8 +33,12 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		$this->assertCount( 1, $e );
 		$e = Zest::getElementsByTagName( $context, 'html' );
 		$this->assertCount( 1, $e );
+		$html = $e[0];
 		$e = Zest::getElementsByTagName( $context, 'li' );
 		$this->assertCount( 5, $e );
+		// Exclusive (ie, match shouldn't include context element)
+		$e = Zest::getElementsByTagName( $html, 'html' );
+		$this->assertCount( 0, $e );
 	}
 
 	/** @dataProvider remexFragProvider */
@@ -59,18 +63,22 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 			$context = $frag;
 		}
 		// Wrapper to access private function
-		$func = static function ( string $sel, array $opts = [] ) use ( $context ): array {
+		$func = static function ( $context, string $sel, array $opts = [] ): array {
 			return TestingAccessWrapper::newFromObject( new ZestInst )
 				->getElementsByClassName( $context, $sel, $opts );
 		};
 		// Now test that Zest::getElementsByClassName() works in all modes.
-		$e = $func( 'testGetElementByClassName' );
+		$e = $func( $context, 'testGetElementByClassName' );
 		$this->assertCount( 1, $e );
 		$this->assertEqualsIgnoringCase( 'html', $e[0]->tagName );
-		$e = $func( 'foo' );
+		$html = $e[0];
+		$e = $func( $context, 'foo' );
 		$this->assertCount( 2, $e );
-		$e = $func( 'a' );
+		$e = $func( $context, 'a' );
 		$this->assertCount( 2, $e );
+		// Exclusive (ie, match shouldn't include context element)
+		$e = $func( $html, 'testGetElementByClassName' );
+		$this->assertCount( 0, $e );
 	}
 
 	/** @dataProvider remexFragProvider */
@@ -95,8 +103,12 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		$e = Zest::getElementsById( $context, 'something with spaces' );
 		$this->assertCount( 1, $e );
 		$this->assertEqualsIgnoringCase( 'html', $e[0]->tagName );
+		$html = $e[0];
 		$e = Zest::getElementsById( $context, 'hi' );
 		$this->assertCount( 1, $e );
+		// Exclusive (ie, match shouldn't include context element)
+		$e = Zest::getElementsById( $html, 'something with spaces' );
+		$this->assertCount( 0, $e );
 	}
 
 	public function remexFragProvider() {
