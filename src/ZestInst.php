@@ -685,13 +685,15 @@ class ZestInst {
 		});
 		*/
 		$this->addSelector1( ':lang', static function ( string $param ): callable {
-			return static function ( $el ) use ( $param ): bool {
-				'@phan-var DOMElement $el';
+			return static function ( $el, $opts ) use ( $param ): bool {
 				while ( $el ) {
-					// PHP DOM doesn't have 'lang' property
-					$lang = $el->getAttribute( 'lang' );
-					if ( $lang ) {
-						return strpos( $lang, $param ) === 0;
+					if ( $el->nodeType === 1 /* Element */ ) {
+						'@phan-var DOMElement $el';
+						// PHP DOM doesn't have 'lang' property
+						$lang = $el->getAttribute( 'lang' );
+						if ( $lang ) {
+							return strpos( $lang, $param ) === 0;
+						}
 					}
 					$el = $el->parentNode;
 				}
@@ -699,12 +701,14 @@ class ZestInst {
 			};
 		} );
 		$this->addSelector1( ':dir', static function ( string $param ): callable {
-			return static function ( $el ) use ( $param ): bool {
-				'@phan-var DOMElement $el';
+			return static function ( $el, $opts ) use ( $param ): bool {
 				while ( $el ) {
-					$dir = $el->getAttribute( 'dir' );
-					if ( $dir ) {
-						return $dir === $param;
+					if ( $el->nodeType === 1 /* Element */ ) {
+						'@phan-var DOMElement $el';
+						$dir = $el->getAttribute( 'dir' );
+						if ( $dir ) {
+							return $dir === $param;
+						}
 					}
 					$el = $el->parentNode;
 				}
@@ -818,9 +822,9 @@ class ZestInst {
 			};
 		} );
 		$this->addSelector1( ':has', function ( string $param ): callable {
-			return function ( $el ) use ( $param ): bool {
+			return function ( $el, array $opts ) use ( $param ): bool {
 				'@phan-var DOMElement $el';
-				return count( self::find( $param, $el ) ) > 0;
+				return count( self::find( $param, $el, $opts ) ) > 0;
 			};
 		} );
 		// Potentially add more pseudo selectors for
@@ -1003,7 +1007,7 @@ class ZestInst {
 		$this->addCombinator( ' ', static function ( callable $test ): callable {
 			return static function ( $el, $opts ) use ( $test ) {
 				while ( $el = $el->parentNode ) {
-					if ( call_user_func( $test, $el, $opts ) ) {
+					if ( $el->nodeType === 1 && call_user_func( $test, $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -1013,7 +1017,7 @@ class ZestInst {
 		$this->addCombinator( '>', static function ( callable $test ): callable {
 			return static function ( $el, $opts ) use ( $test ) {
 				if ( $el = $el->parentNode ) {
-					if ( call_user_func( $test, $el, $opts ) ) {
+					if ( $el->nodeType === 1 && call_user_func( $test, $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -1370,7 +1374,7 @@ class ZestInst {
 	}
 
 	/**
-	 * @return callable(DOMNode,array):bool|callable(DOMNode,DOMNode,array):bool
+	 * @return callable(DOMNode,array):bool
 	 */
 	private function compileGroup( string $sel ): callable {
 		$test = $this->compile( $sel );
@@ -1385,8 +1389,6 @@ class ZestInst {
 			return $test->func;
 		}
 
-		// Optional "$ignore" parameter here lets this be passed to nth()
-		// which is done in the :nth-match selector
 		return static function ( $el, $opts ) use ( $tests ): bool {
 			for ( $i = 0, $l = count( $tests );  $i < $l;  $i++ ) {
 				if ( call_user_func( $tests[ $i ]->func, $el, $opts ) ) {

@@ -195,6 +195,15 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ 'head', [ '/html[1]/head[1]' ] ],
 			[ '*|head', [ '/html[1]/head[1]' ] ],
 			[ '|head', [ 'remex' => [], 'dom' => [ '/html[1]/head[1]' ] ] ],
+			// Ensure selectors can't match Document or DocumentFragment at root
+			[ ':checked html, :enabled html, :disabled html', [] ],
+			[ ':lang(en) html, :dir(rtl) html', [] ],
+			[ ':required html, :read-only html', [] ],
+			[ ':has(*) > html', [] ],
+			[ '[href] > html', [] ],
+			[ ':not(.xyz) > html', [] ],
+			[ ':is(head, body) > html', [] ],
+			[ '* html', [] ],
 		];
 	}
 

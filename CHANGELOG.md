@@ -1,4 +1,7 @@
 # zest-css x.x.x (not yet released)
+* Bug fix: in some cases the ` ` and `>` combinators, as well as the
+  `:dir` and `:lang` selectors, could attempt to match against a
+  DOMDocument or DOMDocumentFragment instead of a DOMElement.
 
 # zest-css 2.0.0 (2021-07-22)
 * Dependency updates
