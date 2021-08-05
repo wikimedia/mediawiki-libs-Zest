@@ -92,7 +92,7 @@ Here is an example of a custom `:name` selector which will match for an
 element's `name` attribute: e.g. `h1:name(foo)`. Effectively an alias
 for `h1[name=foo]`.
 
-``` php
+```php
 use Wikimedia\Zest\ZestInst;
 
 $z = new ZestInst;
@@ -115,7 +115,7 @@ __NOTE__: if your pseudo-class does not take a parameter, use `addSelector0`.
 
 ### Adding an attribute operator
 
-``` php
+```php
 $z = new ZestInst;
 // `$attr` is the attribute
 // `$val` is the value to match
@@ -134,7 +134,7 @@ the logic is upside-down. Zest interprets selectors from right to left.
 
 Here is an example how a parent combinator could be implemented:
 
-``` js
+```js
 $z = new ZestInst;
 $z->addCombinator( '<', function( callable $test ): callable {
   return function( $el, array $opts ) use ( $test ): ?DOMNode {
