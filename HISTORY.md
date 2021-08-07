@@ -1,5 +1,7 @@
 # Release History
 
+## zest-css x.x.x (not yet released)
+
 ## zest-css 2.0.1 (2021-08-07)
 * Bug fix: in some cases the ` ` and `>` combinators, as well as the
   `:dir` and `:lang` selectors, could attempt to match against a
