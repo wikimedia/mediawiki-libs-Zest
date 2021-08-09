@@ -3,9 +3,9 @@
 namespace Wikimedia\Zest\Tests;
 
 use DOMDocument;
-use RemexHtml\DOM;
-use RemexHtml\Tokenizer;
-use RemexHtml\TreeBuilder;
+use Wikimedia\RemexHtml\DOM;
+use Wikimedia\RemexHtml\Tokenizer;
+use Wikimedia\RemexHtml\TreeBuilder;
 use Wikimedia\Zest\Zest;
 
 class ZestTest extends \PHPUnit\Framework\TestCase {
