@@ -22,6 +22,9 @@ use Throwable;
 
 class ZestInst {
 
+	/** @var ZestFunc[] */
+	private $compileCache = [];
+
 	/**
 	 * Helpers
 	 */
@@ -1141,6 +1144,13 @@ class ZestInst {
 	 */
 
 	private function compile( string $sel ): ZestFunc {
+		if ( !isset( $this->compileCache[$sel] ) ) {
+			$this->compileCache[$sel] = $this->doCompile( $sel );
+		}
+		return $this->compileCache[$sel];
+	}
+
+	private function doCompile( string $sel ): ZestFunc {
 		$sel = preg_replace( '/^\s+|\s+$/', '', $sel );
 		$test = null;
 		$filter = [];
