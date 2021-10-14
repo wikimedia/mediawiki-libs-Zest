@@ -2,6 +2,7 @@
 
 ## zest-css x.x.x (not yet released)
 * Update wikimedia/remex-html to 2.3.2 (dev dependency)
+* Add a compilation cache to speed up repeated matches.
 
 ## zest-css 2.0.1 (2021-08-07)
 * Bug fix: in some cases the ` ` and `>` combinators, as well as the
