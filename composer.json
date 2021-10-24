@@ -26,7 +26,7 @@
 		"ext-intl": "*"
 	},
 	"require-dev": {
-		"mediawiki/mediawiki-codesniffer": "37.0.0",
+		"mediawiki/mediawiki-codesniffer": "38.0.0",
 		"mediawiki/mediawiki-phan-config": "0.11.0",
 		"mediawiki/minus-x": "1.1.1",
 		"ockcyp/covers-validator": "1.3.3",
@@ -53,7 +53,7 @@
 			"phpunit",
 			"@phan",
 			"covers-validator",
-			"phpcs -sp",
+			"@phpcs",
 			"minus-x check ."
 		],
 		"cover": "phpunit --coverage-html coverage",
@@ -62,6 +62,7 @@
 			"phpcbf"
 		],
 		"update-history": "update-history patch",
-		"phan": "phan --allow-polyfill-parser"
+		"phan": "phan --allow-polyfill-parser",
+		"phpcs": "phpcs -sp"
 	}
 }
