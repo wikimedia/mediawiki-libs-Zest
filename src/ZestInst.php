@@ -1414,7 +1414,7 @@ class ZestInst {
 	 * @param string $sel
 	 * @param DOMDocument|DOMDocumentFragment|DOMElement $node
 	 * @param array $opts
-	 * @return DOMNode[]
+	 * @return DOMElement[]
 	 */
 	private function findInternal( string $sel, $node, $opts ): array {
 		$results = [];
@@ -1489,7 +1489,6 @@ class ZestInst {
 			}
 		}
 		/* do things the hard/slow way */
-		// @phan-suppress-next-line PhanTypeMismatchReturn
 		return $this->findInternal( $sel, $context, $opts );
 	}
 
@@ -1547,7 +1546,7 @@ class ZestInst {
 		// \DOMDocument, otherwise use standards mode.
 		$doc = self::nodeIsDocument( $context ) ?
 			 $context : $context->ownerDocument;
-		return !$doc instanceof DOMDocument;
+		return !( $doc instanceof DOMDocument );
 	}
 
 	/** @var ?ZestInst */
