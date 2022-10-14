@@ -302,7 +302,15 @@ class ZestInst {
 			// to do this the hard/slow way
 			$r = [];
 			foreach ( $this->getElementsByTagName( $context, '*', $opts ) as $el ) {
-				if ( $id === ( $el->getAttribute( 'id' ) ?? '' ) ) {
+				// Work around Phan 8.1 / 7.4 issues by telling Phan what
+				// the expected type is. Zest could be used with newer DOM
+				// implementations that could return null for missing attributes.
+				// See https://developer.mozilla.org/en-US/docs/Web/API/Element/getAttribute#non-existing_attributes
+				// But, Phan doesn't know that and only sees the native PHP
+				// implementation that returns '' for missing attributes.
+				$elId = $el->getAttribute( 'id' );
+				'@phan-var ?string $elId';
+				if ( $id === ( $elId ?? '' ) ) {
 					$r[] = $el;
 				}
 			}
@@ -1080,12 +1088,12 @@ class ZestInst {
 				return null;
 			}
 
-			$attr = $node->getAttribute( $name ) ?: '';
+			$attr = $node->getAttribute( $name ) ?? '';
 			if ( $attr !== '' && $attr[ 0 ] === '#' ) {
 				$attr = substr( $attr, 1 );
 			}
 
-			$id = $node->getAttribute( 'id' ) ?: '';
+			$id = $node->getAttribute( 'id' ) ?? '';
 			if ( $attr === $id && call_user_func( $test, $node, $opts ) ) {
 				return $node;
 			}
