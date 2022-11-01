@@ -154,7 +154,6 @@ class ZestInst {
 				// bad string.
 				$str = substr( $str, 1 );
 			}
-			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			return preg_replace_callback( self::$rules->str_escape, function ( array $matches ) {
 				$s = $matches[0];
 				if ( !preg_match( '/^\\\(?:([0-9A-Fa-f]+)|([\r\n\f]+))/', $s, $m ) ) {
@@ -166,7 +165,6 @@ class ZestInst {
 				$cp = intval( $m[ 1 ], 16 );
 				return self::unichr( $cp );
 			}, $str );
-			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 		} elseif ( preg_match( self::$rules->ident, $str ) ) {
 			return self::decodeid( $str );
 		} else {
@@ -176,7 +174,6 @@ class ZestInst {
 	}
 
 	private static function decodeid( string $str ): string {
-		// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 		return preg_replace_callback( self::$rules->escape, function ( array $matches ) {
 			$s = $matches[0];
 			if ( !preg_match( '/^\\\([0-9A-Fa-f]+)/', $s, $m ) ) {
@@ -1164,7 +1161,6 @@ class ZestInst {
 		$ref = null;
 
 		while ( $sel ) {
-			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->qname, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = self::decodeid( $cap[ 1 ] );
@@ -1175,7 +1171,6 @@ class ZestInst {
 				} elseif ( substr( $qname, 0, 2 ) === '*|' ) {
 					$qname = substr( $qname, 2 );
 				}
-				// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			} elseif ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$qname = '*';
@@ -1185,7 +1180,6 @@ class ZestInst {
 				throw $this->newBadSelectorException( 'Invalid selector.' );
 			}
 
-			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			while ( preg_match( self::$rules->simple, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$buff[] = $this->tok( $cap );
@@ -1198,7 +1192,6 @@ class ZestInst {
 				$buff[] = $subject->simple;
 			}
 
-			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->ref, $sel, $cap ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$ref = $this->makeRef( self::makeSimple( $buff ), self::decodeid( $cap[ 1 ] ) );
@@ -1207,7 +1200,6 @@ class ZestInst {
 				continue;
 			}
 
-			// @phan-suppress-next-line SecurityCheck-LikelyFalsePositive
 			if ( preg_match( self::$rules->combinator, $sel, $cap, PREG_UNMATCHED_AS_NULL ) ) {
 				$sel = substr( $sel, strlen( $cap[0] ) );
 				$op = $cap[ 1 ] ?? $cap[ 2 ] ?? $cap[ 3 ];
