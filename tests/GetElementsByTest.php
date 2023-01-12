@@ -26,7 +26,7 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		}
 		// Now test that Zest::getElementsByTagName() works in all modes.
 		$e = Zest::getElementsByTagName( $context, '*' );
-		$this->assertCount( 40, $e );
+		$this->assertCount( 41, $e );
 		$e = Zest::getElementsByTagName( $context, 'head' );
 		$this->assertCount( 1, $e );
 		$e = Zest::getElementsByTagName( $context, 'body' );
