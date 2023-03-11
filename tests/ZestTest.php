@@ -294,12 +294,12 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $testEl3, $testEl );
 		// test the 'shortcuts'
 		$els = Zest::find( '#hi', $h1 );
-		$this->assertSame( $els, [] ); // *exclusive*
+		$this->assertSame( [], $els ); // *exclusive*
 		$els = Zest::find( 'h1', $h1 );
-		$this->assertSame( $els, [] ); // *exclusive*
+		$this->assertSame( [], $els ); // *exclusive*
 		$h1->setAttribute( 'class', 'shortcut' );
 		$els = Zest::find( '.shortcut', $h1 );
-		$this->assertSame( $els, [] ); // *exclusive*
+		$this->assertSame( [], $els ); // *exclusive*
 
 		// Test `matches` as well; these are *inclusive*
 		$this->assertTrue( Zest::matches( $scope, '*' ) );
