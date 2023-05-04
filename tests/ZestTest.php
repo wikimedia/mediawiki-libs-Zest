@@ -202,6 +202,8 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ ':not(.xyz) > html', [] ],
 			[ ':is(head, body) > html', [] ],
 			[ '* html', [] ],
+			[ '*[pubdate]', [ '/html[1]/body[1]/article[1]/header[1]/time[1]' ] ],
+			[ '*[nonexistent]', [] ],
 		];
 	}
 

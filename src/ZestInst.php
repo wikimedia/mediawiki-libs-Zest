@@ -893,13 +893,9 @@ class ZestInst {
 			if ( $el->hasAttributes() && $el->hasAttribute( $key ) ) {
 				$attr = $el->getAttribute( $key );
 			} else {
-				$attr = null;
-			}
-			// End simple PHP DOM version
-			if ( $attr == null ) {
 				return false;
 			}
-			$attr .= '';
+			// End simple PHP DOM version
 			if ( $i ) {
 				$attr = strtolower( $attr );
 				$val = strtolower( $val );
