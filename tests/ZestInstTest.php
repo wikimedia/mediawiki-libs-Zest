@@ -37,6 +37,51 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	/**
+	 * @dataProvider escapeProvider
+	 */
+	public function testEscape( $given, $expected ) {
+		$var = TestingAccessWrapper::newFromClass( ZestInst::class )->encodeid( $given );
+		$this->assertSame( $expected, $var );
+	}
+
+	public function escapeProvider() {
+		// See https://drafts.csswg.org/cssom/#escape-a-character-as-code-point
+		return [
+			[ 'abc', 'abc' ],
+			[ "\x00", "\u{FFFD}" ],
+			[ "a\u{0010}b", "a\\10 b" ],
+			[ "a\u{007F}b", "a\\7f b" ],
+			[ "99balloons", "\\39 9balloons" ],
+			[ "-23 chromosomes", "-\\32 3\\ chromosomes" ],
+			[ "-", "\\-" ],
+			[ "-a", "-a" ],
+			[ "AzaZ-_01239", "AzaZ-_01239" ],
+			[ ":", "\\:" ],
+			[ "\u{010B}", "\u{010B}" ],
+			[ "mw:section", "mw\\:section" ],
+			[ "*", "\\*" ],
+		];
+	}
+
+	/**
+	 * @dataProvider xpathQuoteProvider
+	 */
+	public function testXpathQuote( $given, $expected ) {
+		$var = TestingAccessWrapper::newFromClass( ZestInst::class )->xpathQuote( $given );
+		$this->assertSame( $expected, $var );
+	}
+
+	public function xpathQuoteProvider() {
+		// See https://drafts.csswg.org/cssom/#escape-a-character-as-code-point
+		return [
+			[ "abc", "'abc'" ],
+			[ "Frank's car", "concat('Frank',\"'\",'s car')" ],
+			[ "Both\"quotes'are\"here", "concat('Both\"quotes',\"'\",'are\"here')" ],
+			[ "mw:section", "'mw:section'" ],
+		];
+	}
+
+	/**
 	 * @dataProvider parseNthProvider
 	 */
 	public function testParseNth( $given, $group, $offset ) {

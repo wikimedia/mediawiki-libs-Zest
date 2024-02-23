@@ -184,6 +184,28 @@ class ZestInst {
 		}, $str );
 	}
 
+	/**
+	 * Escape an identifier for CSS.
+	 * This is equivalent to CSS.escape
+	 * (https://drafts.csswg.org/cssom/#the-css.escape()-method)
+	 * and is the opposite of self::decodeid().
+	 */
+	private static function encodeid( string $str ): string {
+		return preg_replace_callback( '/(\\x00)|([\\x01-\\x1F\\x7F])|(^[0-9])|(^-[0-9])|(^-$)|([^-A-Za-z0-9_\\x{80}-\\x{10FFFF}])/u', static function ( array $matches ) {
+			if ( isset( $matches[1] ) ) {
+				return "\u{FFFD}";
+			} elseif ( isset( $matches[2] ) || isset( $matches[3] ) ) {
+				$cp = mb_ord( $matches[0], "UTF-8" );
+				return '\\' . dechex( $cp ) . ' ';
+			} elseif ( isset( $matches[4] ) ) {
+				$cp = mb_ord( $matches[0][1], "UTF-8" );
+				return '-\\' . dechex( $cp ) . ' ';
+			} else {
+				return '\\' . $matches[0];
+			}
+		}, $str, -1, $ignore, PREG_UNMATCHED_AS_NULL );
+	}
+
 	private static function makeInside( string $start, string $end ): string {
 		$regex = preg_replace(
 			'/>/', $end, preg_replace(
@@ -363,8 +385,9 @@ class ZestInst {
 			// DOM standards don't define getElementsByTagName on
 			// DocumentFragment, and XPath supports it but has a bug which
 			// omits root elements.  So emulate in both these cases.
+			$selector = $tagName === '*' ? '*' : self::encodeid( $tagName );
 			return self::docFragHelper(
-				$context, $tagName, $opts,
+				$context, $selector, $opts,
 				function ( $el ) use ( $tagName, $opts ): array {
 					return $this->getElementsByTagName( $el, $tagName, $opts );
 				}
@@ -421,7 +444,7 @@ class ZestInst {
 				$context,
 				// NOTE this only works when $className is a single class,
 				// but that's the only way we invoke it.
-				".$className",
+				"." . self::encodeid( $className ),
 				$opts,
 				function ( $el ) use ( $className, $opts ): array {
 					return $this->getElementsByClassName( $el, $className, $opts );

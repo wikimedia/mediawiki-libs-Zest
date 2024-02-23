@@ -37,6 +37,9 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		// Exclusive (ie, match shouldn't include context element)
 		$e = Zest::getElementsByTagName( $html, 'html' );
 		$this->assertCount( 0, $e );
+		// Elements with weird names
+		$e = Zest::getElementsByTagName( $html, 'mw:section' );
+		$this->assertCount( 1, $e );
 	}
 
 	/** @dataProvider remexFragProvider */

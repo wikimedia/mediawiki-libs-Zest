@@ -1,6 +1,9 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Ensure ::getElementsByTagName() and ::getElementsByClassName() work
+  correctly on tag or class names that contain 'special characters'
+  that need to be escaped in a CSS query (T357812).
 * Improvements to test cases.
 
 ## zest-css 3.0.0 (2023-02-27)
