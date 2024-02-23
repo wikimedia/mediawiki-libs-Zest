@@ -20,7 +20,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( array_key_exists( 'remex', $expectedList ) ) {
 			$expectedList = $expectedList['remex'];
 		}
-		$doc = self::loadHTML( __DIR__ . "/index.html" );
+		$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		$matches = Zest::find( $selector, $doc );
 
 		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
@@ -48,7 +48,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( array_key_exists( 'remex', $expectedList ) ) {
 			$expectedList = $expectedList['remex'];
 		}
-		$doc = self::loadHTML( __DIR__ . "/index.html" );
+		$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		$frag = $doc->createDocumentFragment();
 		$frag->appendChild( $doc->documentElement );
 		$matches = Zest::find( $selector, $frag );
@@ -78,9 +78,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( array_key_exists( 'dom', $expectedList ) ) {
 			$expectedList = $expectedList['dom'];
 		}
-		$doc = new DOMDocument;
-		$html = file_get_contents( __DIR__ . "/index.html" );
-		$doc->loadHTML( $html, LIBXML_NOERROR );
+		$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 
 		$matches = Zest::find( $selector, $doc );
 		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
@@ -108,9 +106,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		if ( array_key_exists( 'dom', $expectedList ) ) {
 			$expectedList = $expectedList['dom'];
 		}
-		$doc = new DOMDocument;
-		$html = file_get_contents( __DIR__ . "/index.html" );
-		$doc->loadHTML( $html, LIBXML_NOERROR );
+		$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		$frag = $doc->createDocumentFragment();
 		$frag->appendChild( $doc->documentElement );
 		$matches = Zest::find( $selector, $frag );
@@ -134,14 +130,14 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		return [
 			[ "body > header > h1", [ "/html[1]/body[1]/header[1]/h1[1]" ] ],
 			[ "h1", [ "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]" ] ],
-			[ "*", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[2]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[4]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/footer[1]/a[2]" ] ],
+			[ "*", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[2]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[4]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/footer[1]/a[2]", "/html[1]/body[1]/mw:section[1]" ] ],
 			[ "article > header", [ "/html[1]/body[1]/article[1]/header[1]" ] ],
 			[ "header + p", [ "/html[1]/body[1]/article[1]/p[1]" ] ],
 			[ "header ~ footer", [ "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/footer[1]" ] ],
 			[ ":root", [ 'Document' => [ "/html[1]" ], 'DocumentFragment' => [] ] ],
 			[ ":scope", [ 'Document' => [ "/html[1]" ], 'DocumentFragment' => [] ] ],
 			[ ":first-child", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]" ] ],
-			[ ":last-child", [ "/html[1]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/footer[1]/a[2]" ] ],
+			[ ":last-child", [ "/html[1]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/footer[1]/a[2]", "/html[1]/body[1]/mw:section[1]" ] ],
 			[ "header > :first-child", [ "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]" ] ],
 			[ ":empty", [ "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[4]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]" ] ],
 			[ "a[rel=\"section\"]", [ "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]" ] ],
@@ -151,14 +147,14 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ "html > :root", [] ],
 			[ "header h1", [ "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]" ] ],
 			[ "article p", [ "/html[1]/body[1]/article[1]/p[1]" ] ],
-			[ ":not(a)", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[2]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[4]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]" ] ],
+			[ ":not(a)", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[2]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[4]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/mw:section[1]" ] ],
 			[ ".bar", [ "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]" ] ],
 			[ "[id=\"hi\"]", [ "/html[1]/body[1]/header[1]/h1[1]" ] ],
 			[ "h1 + time[datetime]", [ "/html[1]/body[1]/article[1]/header[1]/time[1]" ] ],
 			[ "h1 + time[datetime]:last-child", [ "/html[1]/body[1]/article[1]/header[1]/time[1]" ] ],
 			[ ":nth-child(2n+1)", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]" ] ],
 			[ ":nth-child(2n-1)", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]" ] ],
-			[ ":nth-of-type(2n+1)", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]" ] ],
+			[ ":nth-of-type(2n+1)", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/mw:section[1]" ] ],
 			// Child selectors on the document element `html`
 			[ "html", [ '/html[1]' ] ], // sanity check before we start
 			[ "html:first-child", [ '/html[1]' ] ],
@@ -192,7 +188,12 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			// Namespace selector
 			[ 'head', [ '/html[1]/head[1]' ] ],
 			[ '*|head', [ '/html[1]/head[1]' ] ],
-			[ '|head', [ 'remex' => [], 'dom' => [ '/html[1]/head[1]' ] ] ],
+			// Note that the result of this next test is different from
+			// what a standards-compliant DOM library would report, but
+			// the \DOMDocument implementation in PHP has a number of
+			// bugs handling namespaced elements and in order to
+			// workaround these we strip the namespace of all elements.
+			[ '|head', [ '/html[1]/head[1]' ] ],
 			// Ensure selectors can't match Document or DocumentFragment at root
 			[ ':checked html, :enabled html, :disabled html', [] ],
 			[ ':lang(en) html, :dir(rtl) html', [] ],
@@ -212,10 +213,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testFindId( bool $useRemex ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		$matches = Zest::find( '#hi', $doc );
 		$this->assertCount( 1, $matches );
@@ -241,10 +241,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testFindTag( bool $useRemex ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		// Elements with non-word characters in the name
 		$ns = $doc->documentElement->namespaceURI;
@@ -267,10 +266,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testScoping( bool $useRemex ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		// From https://drafts.csswg.org/selectors-4/#scoping-root :
 		// "When a selector is scoped, it matches an element only if
@@ -322,10 +320,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testMultiId( bool $useRemex, bool $useCallable ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		$els = Zest::find( 'nav li', $doc );
 		$this->assertCount( 5, $els );
@@ -377,7 +374,33 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		return self::toXPath( $parent ) . "/" . $name . "[$count]";
 	}
 
-	public static function loadHtml( string $filename, $options = [] ) {
+	public static function loadDOMHtml( string $filename ) {
+		$doc = new DOMDocument;
+		$html = file_get_contents( $filename );
+		libxml_use_internal_errors( true );
+		$doc->loadHTML( $html, LIBXML_NOERROR );
+		self::fixupMwSection( $doc );
+		libxml_clear_errors();
+		return $doc;
+	}
+
+	public static function fixupMwSection( $doc ) {
+		// PHP's "loadHTMLFile" screws up HTML tags with embedded colons,
+		// so fix up the 'mw:section' element in the test document.
+		$section = $doc->getElementById( "mw:section" );
+		$mwSection = $doc->createElement( "mw:section" );
+		// Transfer attributes
+		$mwSection->setAttribute( "class", "mw:class" );
+		$mwSection->setAttribute( "id", "mw:section" );
+		// Transfer children
+		while ( $section->firstChild !== null ) {
+			$mwSection->appendChild( $section->firstChild );
+		}
+		// Replace element with incorrect tagName w/ corrected element
+		$section->parentNode->replaceChild( $mwSection, $section );
+	}
+
+	public static function loadRemexHtml( string $filename, $options = [] ) {
 		$text = file_get_contents( $filename );
 		return self::parseHtml( $text, $options );
 	}
@@ -385,6 +408,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	public static function parseHtml( string $text, $options = [] ) {
 		$domBuilder = new DOM\DOMBuilder( $options + [
 			/* DOM builder options  */
+			// Element names with embedded colons don't work properly unless
+			// 'suppressHtmlNamespace' is set.
+			'suppressHtmlNamespace' => true,
 		] );
 		$treeBuilder = new TreeBuilder\TreeBuilder( $domBuilder, [
 			/* tree builder options */

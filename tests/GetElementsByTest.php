@@ -2,7 +2,6 @@
 
 namespace Wikimedia\Zest\Tests;
 
-use DOMDocument;
 use Wikimedia\TestingAccessWrapper;
 use Wikimedia\Zest\Zest;
 use Wikimedia\Zest\ZestInst;
@@ -12,10 +11,9 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 	/** @dataProvider remexFragProvider */
 	public function testGetElementsByTagName( bool $useRemex, bool $useFrag ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		// Move the entire thing into a document fragment.
 		$context = $doc;
@@ -26,7 +24,7 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		}
 		// Now test that Zest::getElementsByTagName() works in all modes.
 		$e = Zest::getElementsByTagName( $context, '*' );
-		$this->assertCount( 41, $e );
+		$this->assertCount( 42, $e );
 		$e = Zest::getElementsByTagName( $context, 'head' );
 		$this->assertCount( 1, $e );
 		$e = Zest::getElementsByTagName( $context, 'body' );
@@ -44,10 +42,9 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 	/** @dataProvider remexFragProvider */
 	public function testGetElementsByClassName( bool $useRemex, bool $useFrag ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		$doc->documentElement->setAttribute(
 			'class', "testGetElementByClassName\t"
@@ -84,10 +81,9 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 	/** @dataProvider remexFragProvider */
 	public function testGetElementsById( bool $useRemex, bool $useFrag ) {
 		if ( $useRemex ) {
-			$doc = self::loadHTML( __DIR__ . "/index.html" );
+			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
 		} else {
-			$doc = new DOMDocument;
-			$doc->loadHTMLFile( __DIR__ . "/index.html", LIBXML_NOERROR );
+			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
 		}
 		$doc->documentElement->setAttribute(
 			'id', "something with spaces"
@@ -124,7 +120,11 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		return ZestTest::toXPath( $node );
 	}
 
-	public static function loadHtml( string $filename ) {
-		return ZestTest::loadHtml( $filename );
+	public static function loadRemexHtml( string $filename ) {
+		return ZestTest::loadRemexHtml( $filename );
+	}
+
+	public static function loadDOMHtml( string $filename ) {
+		return ZestTest::loadDOMHtml( $filename );
 	}
 }

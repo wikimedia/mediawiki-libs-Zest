@@ -1,6 +1,7 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Improvements to test cases.
 
 ## zest-css 3.0.0 (2023-02-27)
 * Drop PHP 7.2 and PHP 7.3 support.
