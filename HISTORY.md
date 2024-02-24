@@ -1,6 +1,8 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Bug fix: recursive CSS selectors like `:has` and `:is` would not be able
+  to use custom selectors.
 * Ensure ::getElementsByTagName() and ::getElementsByClassName() work
   correctly on tag or class names that contain 'special characters'
   that need to be escaped in a CSS query (T357812).

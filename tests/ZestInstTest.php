@@ -117,6 +117,8 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$matches = $z1->find( ':zesttest', $doc );
 		$this->assertCount( 1, $matches );
 		$this->assertSame( '/html[1]/body[1]/article[1]/footer[1]', self::toXPath( $matches[0] ) );
+		$this->assertTrue( $z1->matches( $doc, ':has(:zesttest)' ) );
+		$this->assertTrue( $z1->matches( $matches[0], ':is(:zesttest)' ) );
 
 		// Verify that this new selector doesn't infect previously- or
 		// subsequently-created selector engines.
