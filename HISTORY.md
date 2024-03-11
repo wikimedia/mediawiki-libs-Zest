@@ -1,5 +1,7 @@
 # Release History
 
+## zest-css x.x.x (not yet released)
+
 ## zest-css 3.0.1 (2024-03-11)
 * Bug fix: recursive CSS selectors like `:has` and `:is` can now use
   custom selectors.
