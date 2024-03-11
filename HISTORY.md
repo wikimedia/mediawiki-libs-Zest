@@ -1,12 +1,15 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
-* Bug fix: recursive CSS selectors like `:has` and `:is` would not be able
-  to use custom selectors.
+* Bug fix: recursive CSS selectors like `:has` and `:is` can now use
+  custom selectors.
+* Bug fix: selector for empty attributes now works correctly.
 * Ensure ::getElementsByTagName() and ::getElementsByClassName() work
   correctly on tag or class names that contain 'special characters'
   that need to be escaped in a CSS query (T357812).
 * Improvements to test cases.
+* Dependency updates (mediawiki/mediawiki-phan-config, phpunit,
+  mediawiki/mediawiki-codesniffer)
 
 ## zest-css 3.0.0 (2023-02-27)
 * Drop PHP 7.2 and PHP 7.3 support.
