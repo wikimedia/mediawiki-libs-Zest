@@ -512,11 +512,11 @@ class ZestInst {
 				return false;
 			}
 
-			$rel = call_user_func( $find, $el->parentNode );
+			$rel = $find( $el->parentNode );
 			$pos = 0;
 
 			while ( $rel ) {
-				if ( call_user_func( $test, $rel, $el, $opts ) ) {
+				if ( $test( $rel, $el, $opts ) ) {
 					$pos++;
 				}
 				if ( $rel === $el ) {
@@ -525,7 +525,7 @@ class ZestInst {
 						? ( $pos % $group ) === 0 && ( ( $pos < 0 ) === ( $group < 0 ) )
 						: !$pos;
 				}
-				$rel = call_user_func( $advance, $rel );
+				$rel = $advance( $rel );
 			}
 			return false;
 		};
@@ -617,7 +617,7 @@ class ZestInst {
 		$this->addSelector1( ':not', static function ( string $sel, ZestInst $self ) {
 			$test = $self->compileGroup( $sel );
 			return static function ( $el, $opts ) use ( $test ): bool {
-				return !call_user_func( $test, $el, $opts );
+				return !$test( $el, $opts );
 			};
 		} );
 		$this->addSelector0( ':first-of-type', function ( $el, $opts ): bool {
@@ -716,7 +716,7 @@ class ZestInst {
 				$test = $self->compileGroup( implode( ',', $args ) );
 
 				return self::nth( $arg, static function ( $rel, $el, $opts ) use ( $test ): bool {
-					return call_user_func( $test, $el, $opts );
+					return $test( $el, $opts );
 				}, $last );
 			};
 		};
@@ -942,7 +942,7 @@ class ZestInst {
 				$attr = strtolower( $attr );
 				$val = strtolower( $val );
 			}
-			return call_user_func( $op, $attr, $val );
+			return $op( $attr, $val );
 		};
 	}
 
@@ -1049,7 +1049,7 @@ class ZestInst {
 		$this->addCombinator( ' ', static function ( callable $test ): callable {
 			return static function ( $el, $opts ) use ( $test ) {
 				while ( $el = $el->parentNode ) {
-					if ( $el->nodeType === 1 && call_user_func( $test, $el, $opts ) ) {
+					if ( $el->nodeType === 1 && $test( $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -1059,7 +1059,7 @@ class ZestInst {
 		$this->addCombinator( '>', static function ( callable $test ): callable {
 			return static function ( $el, $opts ) use ( $test ) {
 				if ( $el = $el->parentNode ) {
-					if ( $el->nodeType === 1 && call_user_func( $test, $el, $opts ) ) {
+					if ( $el->nodeType === 1 && $test( $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -1069,7 +1069,7 @@ class ZestInst {
 		$this->addCombinator( '+', function ( callable $test ): callable {
 			return function ( $el, $opts ) use ( $test ) {
 				if ( $el = self::prev( $el ) ) {
-					if ( call_user_func( $test, $el, $opts ) ) {
+					if ( $test( $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -1079,7 +1079,7 @@ class ZestInst {
 		$this->addCombinator( '~', function ( callable $test ): callable {
 			return function ( $el, $opts ) use ( $test ) {
 				while ( $el = self::prev( $el ) ) {
-					if ( call_user_func( $test, $el, $opts ) ) {
+					if ( $test( $el, $opts ) ) {
 						return $el;
 					}
 				}
@@ -1088,7 +1088,7 @@ class ZestInst {
 		} );
 		$this->addCombinator( 'noop', static function ( callable $test ): callable {
 			return static function ( $el, $opts ) use ( $test ) {
-				if ( call_user_func( $test, $el, $opts ) ) {
+				if ( $test( $el, $opts ) ) {
 					return $el;
 				}
 				return null;
@@ -1110,7 +1110,7 @@ class ZestInst {
 
 			while ( $i-- ) {
 				$node = $nodes[$i];
-				if ( call_user_func( $ref->test->func, $el, $opts ) ) {
+				if ( ( $ref->test->func )( $el, $opts ) ) {
 					$node = null;
 					return true;
 				}
@@ -1131,7 +1131,7 @@ class ZestInst {
 			}
 
 			$id = $node->getAttribute( 'id' ) ?? '';
-			if ( $attr === $id && call_user_func( $test, $node, $opts ) ) {
+			if ( $attr === $id && $test( $node, $opts ) ) {
 				return $node;
 			}
 			return null;
@@ -1356,7 +1356,7 @@ class ZestInst {
 
 		return static function ( $el, $opts ) use ( $l, $func ): bool {
 			for ( $i = 0;  $i < $l;  $i++ ) {
-				if ( !call_user_func( $func[ $i ], $el, $opts ) ) {
+				if ( !$func[ $i ]( $el, $opts ) ) {
 					return false;
 				}
 			}
@@ -1372,13 +1372,13 @@ class ZestInst {
 	private static function makeTest( array $func ): ZestFunc {
 		if ( count( $func ) < 2 ) {
 			return new ZestFunc( static function ( $el, $opts ) use ( $func ): bool {
-				return (bool)call_user_func( $func[ 0 ], $el, $opts );
+				return (bool)$func[ 0 ]( $el, $opts );
 			} );
 		}
 		return new ZestFunc( static function ( $el, $opts ) use ( $func ): bool {
 			$i = count( $func );
 			while ( $i-- ) {
-				if ( !( $el = call_user_func( $func[ $i ], $el, $opts ) ) ) {
+				if ( !( $el = $func[ $i ]( $el, $opts ) ) ) {
 					return false;
 				}
 			}
@@ -1399,7 +1399,7 @@ class ZestInst {
 			$i = count( $scope );
 
 			while ( $i-- ) {
-				if ( call_user_func( $subject->test->func, $scope[$i], $opts ) && $target === $el ) {
+				if ( ( $subject->test->func )( $scope[$i], $opts ) && $target === $el ) {
 					$target = null;
 					return true;
 				}
@@ -1435,7 +1435,7 @@ class ZestInst {
 
 		return static function ( $el, $opts ) use ( $tests ): bool {
 			for ( $i = 0, $l = count( $tests );  $i < $l;  $i++ ) {
-				if ( call_user_func( $tests[ $i ]->func, $el, $opts ) ) {
+				if ( ( $tests[ $i ]->func )( $el, $opts ) ) {
 					return true;
 				}
 			}
@@ -1465,7 +1465,7 @@ class ZestInst {
 		$needsSort = false;
 
 		foreach ( $scope as $el ) {
-			if ( call_user_func( $test->func, $el, $opts ) ) {
+			if ( ( $test->func )( $el, $opts ) ) {
 				$results[spl_object_id( $el )] = $el;
 			}
 		}
@@ -1476,7 +1476,7 @@ class ZestInst {
 				$test = $this->compile( $test->sel );
 				$scope = $this->getElementsByTagName( $node, $test->qname, $opts );
 				foreach ( $scope as $el ) {
-					if ( call_user_func( $test->func, $el, $opts ) ) {
+					if ( ( $test->func )( $el, $opts ) ) {
 						$results[spl_object_id( $el )] = $el;
 					}
 				}
@@ -1554,7 +1554,7 @@ class ZestInst {
 		$test->sel = $sel;
 		do {
 			$test = $this->compile( $test->sel );
-			if ( call_user_func( $test->func, $el, $opts ) ) {
+			if ( ( $test->func )( $el, $opts ) ) {
 				return true;
 			}
 		} while ( $test->sel );
