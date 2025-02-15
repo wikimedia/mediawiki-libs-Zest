@@ -348,7 +348,14 @@ class ZestInst {
 		return iterator_to_array( $xpath->query( $query, $context ) );
 	}
 
-	private function docFragHelper( $docFrag, string $sel, array $opts, callable $collectFunc ) {
+	/**
+	 * @param DOMDocument|DOMDocumentFragment|DOMElement $docFrag
+	 * @param string $sel
+	 * @param array $opts Additional match-context options (optional)
+	 * @param callable $collectFunc
+	 * @return array<DOMElement>
+	 */
+	private function docFragHelper( $docFrag, string $sel, array $opts, callable $collectFunc ): array {
 		$result = [];
 		for ( $n = $docFrag->firstChild; $n; $n = $n->nextSibling ) {
 			if ( $n->nodeType !== 1 ) {
