@@ -8,6 +8,9 @@ use Wikimedia\RemexHtml\Tokenizer;
 use Wikimedia\RemexHtml\TreeBuilder;
 use Wikimedia\Zest\Zest;
 
+/**
+ * @covers \Wikimedia\Zest\Zest
+ */
 class ZestTest extends \PHPUnit\Framework\TestCase {
 
 	/**

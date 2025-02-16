@@ -6,6 +6,9 @@ use Wikimedia\TestingAccessWrapper;
 use Wikimedia\Zest\Zest;
 use Wikimedia\Zest\ZestInst;
 
+/**
+ * @covers \Wikimedia\Zest\Zest
+ */
 class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 
 	/** @dataProvider remexFragProvider */

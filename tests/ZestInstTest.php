@@ -5,6 +5,9 @@ namespace Wikimedia\Zest\Tests;
 use Wikimedia\TestingAccessWrapper;
 use Wikimedia\Zest\ZestInst;
 
+/**
+ * @covers \Wikimedia\Zest\ZestInst
+ */
 class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	/**
 	 * Just check if the Zest class has no syntax error.
