@@ -23,7 +23,7 @@ use Throwable;
 class ZestInst {
 
 	/** @var ZestFunc[] */
-	private $compileCache = [];
+	private array $compileCache = [];
 
 	/**
 	 * Helpers
