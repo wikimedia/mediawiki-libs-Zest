@@ -1,6 +1,11 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Update phpunit/phpunit to 9.6.21
+* Update mediawiki/mediawiki-phan-config to 0.15.1
+* Update mediawiki/mediawiki-codesniffer to 46.0.0
+* Code style improvements: replace call_user_func, add @covers, type
+  declarations and function documentation.
 
 ## zest-css 3.0.2 (2024-11-09)
 * Update wikimedia/remex-html to 4.1.0 (dev dependency)
