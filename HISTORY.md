@@ -1,6 +1,7 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Update wikimedia/remex-html to 4.1.2 (dev dependency)
 * Update phpunit/phpunit to 9.6.21
 * Update mediawiki/mediawiki-phan-config to 0.15.1
 * Update mediawiki/mediawiki-codesniffer to 46.0.0
