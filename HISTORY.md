@@ -7,6 +7,7 @@
 * Update mediawiki/mediawiki-codesniffer to 46.0.0
 * Code style improvements: replace call_user_func, add @covers, type
   declarations and function documentation.
+* PHP 8.4 Dom\Document compatibility
 
 ## zest-css 3.0.2 (2024-11-09)
 * Update wikimedia/remex-html to 4.1.0 (dev dependency)
