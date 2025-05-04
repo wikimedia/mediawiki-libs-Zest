@@ -129,7 +129,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		}
 	}
 
-	public function findProvider() {
+	public static function findProvider() {
 		return [
 			[ "body > header > h1", [ "/html[1]/body[1]/header[1]/h1[1]" ] ],
 			[ "h1", [ "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]" ] ],
@@ -243,7 +243,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertContains( $el2, $matches );
 	}
 
-	public function findIdProvider() {
+	public static function findIdProvider() {
 		return [ [ false ], [ true ] ];
 	}
 
@@ -268,7 +268,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertCount( 0, $matches );
 	}
 
-	public function findTagProvider() {
+	public static function findTagProvider() {
 		return [ [ false ], [ true ] ];
 	}
 
@@ -322,7 +322,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( Zest::matches( $h1, '.shortcut' ) );
 	}
 
-	public function scopingProvider() {
+	public static function scopingProvider() {
 		return [ [ false ], [ true ] ];
 	}
 
@@ -355,7 +355,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $result2, $els );
 	}
 
-	public function multiIdProvider() {
+	public static function multiIdProvider() {
 		for ( $i = 0; $i < 4; $i++ ) {
 			$remex = ( $i & 1 ) !== 0;
 			$callable = ( $i & 2 ) !== 0;

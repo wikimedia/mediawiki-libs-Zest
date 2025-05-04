@@ -113,7 +113,7 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 		$this->assertCount( 0, $e );
 	}
 
-	public function remexFragProvider() {
+	public static function remexFragProvider() {
 		return [
 			'loadHTMLFile, Document' => [ false, false ],
 			'loadHTMLFile, DocumentFragment' => [ false, true ],

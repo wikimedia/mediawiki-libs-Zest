@@ -30,7 +30,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $expected, $var );
 	}
 
-	public function unquoteProvider() {
+	public static function unquoteProvider() {
 		return [
 			[ 'foo', 'foo' ],
 			[ '"foo"', 'foo' ],
@@ -47,7 +47,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $expected, $var );
 	}
 
-	public function escapeProvider() {
+	public static function escapeProvider() {
 		// See https://drafts.csswg.org/cssom/#escape-a-character-as-code-point
 		return [
 			[ 'abc', 'abc' ],
@@ -74,7 +74,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $expected, $var );
 	}
 
-	public function xpathQuoteProvider() {
+	public static function xpathQuoteProvider() {
 		// See https://drafts.csswg.org/cssom/#escape-a-character-as-code-point
 		return [
 			[ "abc", "'abc'" ],
@@ -93,7 +93,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( $offset, $res->offset );
 	}
 
-	public function parseNthProvider() {
+	public static function parseNthProvider() {
 		return [
 			[ 'even', 2, 0 ],
 			[ 'odd', 2, 1 ],
