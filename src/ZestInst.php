@@ -1185,10 +1185,6 @@ class ZestInst {
 		self::$rules->str_escape = self::replace( self::$rules->str_escape, 'escape', self::$rules->escape );
 	}
 
-	/**
-	 * Compiling
-	 */
-
 	private function compile( string $sel ): ZestFunc {
 		if ( !isset( $this->compileCache[$sel] ) ) {
 			$this->compileCache[$sel] = $this->doCompile( $sel );
