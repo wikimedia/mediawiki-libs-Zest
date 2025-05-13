@@ -107,8 +107,9 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		];
 	}
 
-	public function testCustom() {
-		$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
+	/** @dataProvider docProvider */
+	public function testCustom( callable $docFunc ) {
+		$doc = $docFunc( __DIR__ . "/index.html" );
 		$thrown = 0;
 		$z0 = new ZestInst;
 		// Verify that we can create a custom selector
@@ -143,7 +144,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		return ZestTest::toXPath( $node );
 	}
 
-	public static function loadRemexHtml( string $filename ) {
-		return ZestTest::loadRemexHtml( $filename );
+	public static function docProvider() {
+		return ZestTest::docProvider();
 	}
 }

@@ -12,12 +12,8 @@ use Wikimedia\Zest\ZestInst;
 class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 
 	/** @dataProvider remexFragProvider */
-	public function testGetElementsByTagName( bool $useRemex, bool $useFrag ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testGetElementsByTagName( callable $docFunc, bool $useFrag ) {
+		$doc = $docFunc( __DIR__ . "/index.html" );
 		// Move the entire thing into a document fragment.
 		$context = $doc;
 		if ( $useFrag ) {
@@ -46,12 +42,8 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	/** @dataProvider remexFragProvider */
-	public function testGetElementsByClassName( bool $useRemex, bool $useFrag ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testGetElementsByClassName( callable $docFunc, bool $useFrag ) {
+		$doc = $docFunc( __DIR__ . "/index.html" );
 		$doc->documentElement->setAttribute(
 			'class', "testGetElementByClassName\t"
 		);
@@ -85,12 +77,8 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	/** @dataProvider remexFragProvider */
-	public function testGetElementsById( bool $useRemex, bool $useFrag ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testGetElementsById( callable $docFunc, bool $useFrag ) {
+		$doc = $docFunc( __DIR__ . "/index.html" );
 		$doc->documentElement->setAttribute(
 			'id', "something with spaces"
 		);
@@ -114,23 +102,13 @@ class GetElementsByTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public static function remexFragProvider() {
-		return [
-			'loadHTMLFile, Document' => [ false, false ],
-			'loadHTMLFile, DocumentFragment' => [ false, true ],
-			'Remex, Document' => [ true, false ],
-			'Remex, DocumentFragment' => [ true, true ],
-		];
+		foreach ( ZestTest::docProvider() as $desc => [ $docFunc ] ) {
+			yield "$desc, Document" => [ $docFunc, false ];
+			yield "$desc, DocumentFragment" => [ $docFunc, true ];
+		}
 	}
 
 	public static function toXPath( $node ) {
 		return ZestTest::toXPath( $node );
-	}
-
-	public static function loadRemexHtml( string $filename ) {
-		return ZestTest::loadRemexHtml( $filename );
-	}
-
-	public static function loadDOMHtml( string $filename ) {
-		return ZestTest::loadDOMHtml( $filename );
 	}
 }

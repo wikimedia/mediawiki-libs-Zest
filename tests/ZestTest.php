@@ -16,72 +16,11 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	/**
 	 * @dataProvider findProvider
 	 */
-	public function testFindRemex( string $selector, array $expectedList ) {
+	public function testFindDocument( callable $docFunc, string $selector, array $expectedList ) {
 		if ( array_key_exists( 'Document', $expectedList ) ) {
 			$expectedList = $expectedList['Document'];
 		}
-		if ( array_key_exists( 'remex', $expectedList ) ) {
-			$expectedList = $expectedList['remex'];
-		}
-		$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		$matches = Zest::find( $selector, $doc );
-
-		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
-		foreach ( $matchesList as $m ) {
-			$this->assertContains( $m, $expectedList );
-		}
-		foreach ( $expectedList as $e ) {
-			$this->assertContains( $e, $matchesList );
-		}
-		if ( count( $expectedList ) === 0 ) {
-			// Just ensure there's at least one assertion to keep the test
-			// runner happy, even if the selector isn't expected to match
-			// anything.
-			$this->assertSame( $expectedList, $matchesList );
-		}
-	}
-
-	/**
-	 * @dataProvider findProvider
-	 */
-	public function testFindRemexFragment( string $selector, array $expectedList ) {
-		if ( array_key_exists( 'DocumentFragment', $expectedList ) ) {
-			$expectedList = $expectedList['DocumentFragment'];
-		}
-		if ( array_key_exists( 'remex', $expectedList ) ) {
-			$expectedList = $expectedList['remex'];
-		}
-		$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		$frag = $doc->createDocumentFragment();
-		$frag->appendChild( $doc->documentElement );
-		$matches = Zest::find( $selector, $frag );
-
-		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
-		foreach ( $matchesList as $m ) {
-			$this->assertContains( $m, $expectedList );
-		}
-		foreach ( $expectedList as $e ) {
-			$this->assertContains( $e, $matchesList );
-		}
-		if ( count( $expectedList ) === 0 ) {
-			// Just ensure there's at least one assertion to keep the test
-			// runner happy, even if the selector isn't expected to match
-			// anything.
-			$this->assertSame( $expectedList, $matchesList );
-		}
-	}
-
-	/**
-	 * @dataProvider findProvider
-	 */
-	public function testFindDOM( string $selector, array $expectedList ) {
-		if ( array_key_exists( 'Document', $expectedList ) ) {
-			$expectedList = $expectedList['Document'];
-		}
-		if ( array_key_exists( 'dom', $expectedList ) ) {
-			$expectedList = $expectedList['dom'];
-		}
-		$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
+		$doc = $docFunc();
 
 		$matches = Zest::find( $selector, $doc );
 		$matchesList = array_map( [ self::class, 'toXPath' ], $matches );
@@ -102,14 +41,11 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	/**
 	 * @dataProvider findProvider
 	 */
-	public function testFindDOMFragment( string $selector, array $expectedList ) {
+	public function testFindDocumentFragment( callable $docFunc, string $selector, array $expectedList ) {
 		if ( array_key_exists( 'DocumentFragment', $expectedList ) ) {
 			$expectedList = $expectedList['DocumentFragment'];
 		}
-		if ( array_key_exists( 'dom', $expectedList ) ) {
-			$expectedList = $expectedList['dom'];
-		}
-		$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
+		$doc = $docFunc();
 		$frag = $doc->createDocumentFragment();
 		$frag->appendChild( $doc->documentElement );
 		$matches = Zest::find( $selector, $frag );
@@ -130,7 +66,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public static function findProvider() {
-		return [
+		$cases = [
 			[ "body > header > h1", [ "/html[1]/body[1]/header[1]/h1[1]" ] ],
 			[ "h1", [ "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]" ] ],
 			[ "*", [ "/html[1]", "/html[1]/head[1]", "/html[1]/head[1]/meta[1]", "/html[1]/head[1]/title[1]", "/html[1]/head[1]/script[1]", "/html[1]/head[1]/script[2]", "/html[1]/head[1]/script[3]", "/html[1]/head[1]/script[4]", "/html[1]/head[1]/script[5]", "/html[1]/body[1]", "/html[1]/body[1]/header[1]", "/html[1]/body[1]/header[1]/h1[1]", "/html[1]/body[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[1]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[2]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[3]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[4]/a[1]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]", "/html[1]/body[1]/header[1]/nav[1]/ul[1]/li[5]/a[1]", "/html[1]/body[1]/article[1]", "/html[1]/body[1]/article[1]/header[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]", "/html[1]/body[1]/article[1]/header[1]/h1[1]/a[1]", "/html[1]/body[1]/article[1]/header[1]/time[1]", "/html[1]/body[1]/article[1]/p[1]", "/html[1]/body[1]/article[1]/footer[1]", "/html[1]/body[1]/article[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]", "/html[1]/body[1]/footer[1]/a[1]", "/html[1]/body[1]/footer[1]/form[1]", "/html[1]/body[1]/footer[1]/form[1]/input[1]", "/html[1]/body[1]/footer[1]/form[1]/input[2]", "/html[1]/body[1]/footer[1]/small[1]", "/html[1]/body[1]/footer[1]/small[1]/a[1]", "/html[1]/body[1]/footer[1]/a[2]", "/html[1]/body[1]/mw:section[1]" ] ],
@@ -204,7 +140,8 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			// the \DOMDocument implementation in PHP has a number of
 			// bugs handling namespaced elements and in order to
 			// workaround these we strip the namespace of all elements.
-			[ '|head', [ '/html[1]/head[1]' ] ],
+			// (DISABLED because \Dom\Document actually does the right thing!)
+			// [ '|head', [ '/html[1]/head[1]' ] ],
 			// Ensure selectors can't match Document or DocumentFragment at root
 			[ ':checked html, :enabled html, :disabled html', [] ],
 			[ ':lang(en) html, :dir(rtl) html', [] ],
@@ -217,17 +154,19 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			[ '*[pubdate]', [ '/html[1]/body[1]/article[1]/header[1]/time[1]' ] ],
 			[ '*[nonexistent]', [] ],
 		];
+		foreach ( self::docProvider() as $desc => [ $docFunc ] ) {
+			foreach ( $cases as $c ) {
+				array_unshift( $c, $docFunc );
+				yield $c[1] . "($desc)" => $c;
+			}
+		}
 	}
 
 	/**
-	 * @dataProvider findIdProvider
+	 * @dataProvider docProvider
 	 */
-	public function testFindId( bool $useRemex ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testFindId( callable $docFunc ) {
+		$doc = $docFunc();
 		$matches = Zest::find( '#hi', $doc );
 		$this->assertCount( 1, $matches );
 		$el0 = $matches[0];
@@ -243,19 +182,11 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertContains( $el2, $matches );
 	}
 
-	public static function findIdProvider() {
-		return [ [ false ], [ true ] ];
-	}
-
 	/**
-	 * @dataProvider findTagProvider
+	 * @dataProvider docProvider
 	 */
-	public function testFindTag( bool $useRemex ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testFindTag( callable $docFunc ) {
+		$doc = $docFunc();
 		// Elements with non-word characters in the name
 		$ns = $doc->documentElement->namespaceURI;
 		$el = $doc->createElementNS( $ns, "p\u{00C0}p" );
@@ -268,19 +199,11 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertCount( 0, $matches );
 	}
 
-	public static function findTagProvider() {
-		return [ [ false ], [ true ] ];
-	}
-
 	/**
-	 * @dataProvider scopingProvider
+	 * @dataProvider docProvider
 	 */
-	public function testScoping( bool $useRemex ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testScoping( callable $docFunc ) {
+		$doc = $docFunc();
 		// From https://drafts.csswg.org/selectors-4/#scoping-root :
 		// "When a selector is scoped, it matches an element only if
 		// the element is a descendant of the scoping root. (The rest
@@ -322,19 +245,11 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue( Zest::matches( $h1, '.shortcut' ) );
 	}
 
-	public static function scopingProvider() {
-		return [ [ false ], [ true ] ];
-	}
-
 	/**
 	 * @dataProvider multiIdProvider
 	 */
-	public function testMultiId( bool $useRemex, bool $useCallable ) {
-		if ( $useRemex ) {
-			$doc = self::loadRemexHtml( __DIR__ . "/index.html" );
-		} else {
-			$doc = self::loadDOMHtml( __DIR__ . "/index.html" );
-		}
+	public function testMultiId( callable $docFunc, bool $useCallable ) {
+		$doc = $docFunc();
 		$els = Zest::find( 'nav li', $doc );
 		$this->assertCount( 5, $els );
 		foreach ( $els as $el ) {
@@ -356,10 +271,9 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public static function multiIdProvider() {
-		for ( $i = 0; $i < 4; $i++ ) {
-			$remex = ( $i & 1 ) !== 0;
-			$callable = ( $i & 2 ) !== 0;
-			yield [ $remex, $callable ];
+		foreach ( self::docProvider() as $desc => [ $docFunc ] ) {
+			yield "$desc,not callable" => [ $docFunc, false ];
+			yield "$desc,callable" => [ $docFunc, true ];
 		}
 	}
 
@@ -390,6 +304,14 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$html = file_get_contents( $filename );
 		libxml_use_internal_errors( true );
 		$doc->loadHTML( $html, LIBXML_NOERROR );
+		self::fixupMwSection( $doc );
+		libxml_clear_errors();
+		return $doc;
+	}
+
+	public static function loadDomDocumentHtml( string $filename ) {
+		libxml_use_internal_errors( true );
+		$doc = \Dom\HTMLDocument::createFromFile( $filename, LIBXML_NOERROR );
 		self::fixupMwSection( $doc );
 		libxml_clear_errors();
 		return $doc;
@@ -435,4 +357,31 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		] );
 		return $domBuilder->getFragment();
 	}
+
+	public static function docProvider() {
+		$defaultFilename = __DIR__ . "/index.html";
+
+		$docFunc = fn ( $filename = null ) => self::loadDOMHtml( $filename ?? $defaultFilename );
+		yield "DOMDocument, loadHTML" => [ $docFunc ];
+
+		$docFunc = fn ( $filename = null ) => self::loadRemexHtml( $filename ?? $defaultFilename, [
+			// Element names with embedded colons don't work properly unless
+			// 'suppressHtmlNamespace' is set.
+			'suppressHtmlNamespace' => true,
+		] );
+		yield "DOMDocument, Remex" => [ $docFunc ];
+
+		// PHP 8.4 \Dom\Document
+		if ( class_exists( '\Dom\Document' ) ) {
+			$docFunc = fn ( $filename = null ) => self::loadDomDocumentHtml( $filename ?? $defaultFilename );
+			yield 'Dom\\Document, createFromFile' => [ $docFunc ];
+
+			$docFunc = fn ( $filename = null ) => self::loadRemexHtml( $filename ?? $defaultFilename, [
+				'suppressIdAttribute' => true,
+				'domImplementationClass' => \Dom\Implementation::class,
+			] );
+			yield 'Dom\\Document, Remex' => [ $docFunc ];
+		}
+	}
+
 }

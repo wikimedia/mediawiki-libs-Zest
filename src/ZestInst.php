@@ -308,11 +308,11 @@ class ZestInst {
 			// shadowing a later-added element, so we can't return
 			// null here directly; fallback to a full search.
 		}
-		if ( $this->isStandardsMode( $context, $opts ) ) {
+		if ( $this->isStandardsMode( $context, $opts, false ) ) {
 			// The workaround below only works (and is only necessary!)
-			// when this is a PHP-provided \DOMDocument.  For 3rd-party
-			// DOM implementations, we assume that getElementById() was
-			// reliable.
+			// when this is a PHP-provided \DOMDocument or \Dom\Document.
+			// For 3rd-party DOM implementations, we assume that
+			// getElementById() was reliable.
 			// @phan-suppress-next-line PhanUndeclaredProperty
 			if ( $context->isConnected || $id === '' ) {
 				return [];
@@ -337,7 +337,7 @@ class ZestInst {
 		}
 		// Do an xpath search, which is still a full traversal of the tree
 		// (sigh) but 25% faster than traversing it wholly in PHP.
-		$xpath = new \DOMXPath( $doc );
+		$xpath = self::newXPath( $doc );
 		$query = './/*[@id=' . self::xpathQuote( $id ) . ']';
 		if ( $context->nodeType === 11 ) {
 			// ugh, PHP dom extension workaround: nodes which are direct
@@ -400,8 +400,10 @@ class ZestInst {
 				}
 			);
 		}
-		if ( $this->isStandardsMode( $context, $opts ) ) {
+		if ( $this->isStandardsMode( $context, $opts, false ) ) {
 			// For third-party DOM implementations, just use native func.
+			// (This method is defined by \Dom\Document but we expect
+			// the XPath version below is faster.)
 			return iterator_to_array(
 				$context->getElementsByTagName( $tagName )
 			);
@@ -417,13 +419,18 @@ class ZestInst {
 
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
-		$xpath = new \DOMXPath( $doc );
-		$ns = $doc->documentElement === null ? 'force use of local-name' :
-			$doc->documentElement->namespaceURI;
+		$xpath = self::newXPath( $doc );
 		if ( $tagName === '*' ) {
 			$query = ".//*";
-		} elseif ( $ns || !preg_match( '/^[_a-z][-.0-9_a-z]*$/S', $tagName ) ) {
+		} elseif (
+			$doc->documentElement === null ||
+			!preg_match( '/^[_a-z][-.0-9_a-z]*$/S', $tagName )
+		) {
 			$query = './/*[local-name()=' . self::xpathQuote( $tagName ) . ']';
+		} elseif ( $doc->documentElement->namespaceURI !== null ) {
+			// @phan-suppress-next-line PhanTypeMismatchArgumentNullableInternal
+			$xpath->registerNamespace( 'ns', $doc->documentElement->namespaceURI );
+			$query = ".//ns:$tagName";
 		} else {
 			$query = ".//$tagName";
 		}
@@ -458,8 +465,9 @@ class ZestInst {
 				}
 			);
 		}
-		if ( $this->isStandardsMode( $context, $opts ) ) {
+		if ( $this->isStandardsMode( $context, $opts, false ) ) {
 			// For third-party DOM implementations, just use native func.
+			// (PHP8.4 doesn't have this method)
 			return iterator_to_array(
 				// @phan-suppress-next-line PhanUndeclaredMethod
 				$context->getElementsByClassName( $className )
@@ -472,7 +480,7 @@ class ZestInst {
 		// tree traversal all in PHP.)
 		$doc = self::nodeIsDocument( $context ) ?
 			$context : $context->ownerDocument;
-		$xpath = new \DOMXPath( $doc );
+		$xpath = self::newXPath( $doc );
 		$quotedClassName = self::xpathQuote( " $className " );
 		$query = ".//*[contains(concat(' ', normalize-space(@class), ' '), $quotedClassName)]";
 		return iterator_to_array( $xpath->query( $query, $context ) );
@@ -1580,9 +1588,11 @@ class ZestInst {
 	 * the ownerDocument of the given node is not a \DOMDocument.
 	 * @param DOMNode $context a context node
 	 * @param array $opts The zest options array pased to ::find, ::matches, etc
+	 * @param bool $php84IsStandard Whether the \Dom\Document class introduced
+	 *  in PHP 8.4 should be considered "standard" or not.  Defaults to true.
 	 * @return bool True for standards mode, otherwise false.
 	 */
-	protected function isStandardsMode( $context, array $opts ): bool {
+	protected function isStandardsMode( $context, array $opts, bool $php84IsStandard = true ): bool {
 		// The $opts array can force a specific mode, if key is present
 		if ( array_key_exists( 'standardsMode', $opts ) ) {
 			return (bool)$opts['standardsMode'];
@@ -1591,7 +1601,24 @@ class ZestInst {
 		// \DOMDocument, otherwise use standards mode.
 		$doc = self::nodeIsDocument( $context ) ?
 			 $context : $context->ownerDocument;
+		if ( is_a( $doc, '\Dom\Document', false ) ) {
+			return $php84IsStandard;
+		}
 		return !( $doc instanceof DOMDocument );
+	}
+
+	/**
+	 * Helper function to convince phan that \Dom\XPath is really a
+	 * \DOMXPath.
+	 * @param DOMDocument $doc
+	 * @return \DOMXPath
+	 * @suppress PhanUndeclaredClassMethod,PhanTypeMismatchReturnProbablyReal,UnusedSuppression
+	 */
+	private static function newXPath( $doc ) {
+		if ( is_a( $doc, '\Dom\Document' ) ) {
+			return new \Dom\XPath( $doc );
+		}
+		return new \DOMXPath( $doc );
 	}
 
 	/** @var ?ZestInst */
