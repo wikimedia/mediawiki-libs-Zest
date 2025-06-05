@@ -677,7 +677,7 @@ class ZestInst {
 		$this->addSelector0( ':checked', static function ( $el, $opts ): bool {
 			'@phan-var DOMElement $el';
 			$self = $opts['this'];
-			if ( $self->isStandardsMode( $el, $opts ) ) {
+			if ( $self->isStandardsMode( $el, $opts, false ) ) {
 				// These properties don't exist in the PHP DOM, and in fact
 				// they are supposed to reflect the *dynamic* state of the
 				// widget, not the 'default' state (which is given by the
