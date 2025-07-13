@@ -20,6 +20,9 @@ use Throwable;
  * Domino version based on Zest v0.1.3 with bugfixes applied.
  */
 
+/**
+ * @phan-file-suppress PhanUnusedClosureParameter
+ */
 class ZestInst {
 
 	/** @var ZestFunc[] */
@@ -868,6 +871,7 @@ class ZestInst {
 				 */
 				static function ( $el, $opts ) use ( $selector ): bool {
 					$self = $opts['this'];
+					// @phan-suppress-next-line PhanThrowTypeAbsent
 					throw $self->newBadSelectorException( $selector . ' is not supported.' );
 				}
 			);
@@ -1202,7 +1206,6 @@ class ZestInst {
 
 	private function doCompile( string $sel ): ZestFunc {
 		$sel = preg_replace( '/^\s+|\s+$/', '', $sel );
-		$test = null;
 		$filter = [];
 		$buff = [];
 		$subject = null;
@@ -1471,7 +1474,6 @@ class ZestInst {
 		$results = [];
 		$test = $this->compile( $sel );
 		$scope = $this->getElementsByTagName( $node, $test->qname, $opts );
-		$i = 0;
 		$el = null;
 		$needsSort = false;
 
@@ -1576,6 +1578,7 @@ class ZestInst {
 	 * Allow customization of the exception thrown for a bad selector.
 	 * @param string $msg Description of the failure
 	 * @return Throwable
+	 * @phan-return InvalidArgumentException
 	 */
 	protected function newBadSelectorException( string $msg ): Throwable {
 		return new InvalidArgumentException( $msg );
