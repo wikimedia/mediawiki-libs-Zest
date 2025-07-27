@@ -1,5 +1,7 @@
 <?php
 
+// @phan-file-suppress PhanUnusedClosureParameter
+
 namespace Wikimedia\Zest;
 
 use DOMDocument;
@@ -20,9 +22,6 @@ use Throwable;
  * Domino version based on Zest v0.1.3 with bugfixes applied.
  */
 
-/**
- * @phan-file-suppress PhanUnusedClosureParameter
- */
 class ZestInst {
 
 	/** @var ZestFunc[] */
