@@ -1,6 +1,7 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Require wikimedia/remex-html ^5.1.0 (dev dependency)
 
 ## zest-css 4.1.0 (2025-08-15)
 * Drop support for PHP < 8.1
