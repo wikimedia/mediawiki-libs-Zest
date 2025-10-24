@@ -294,6 +294,9 @@ class ZestInst {
 		// DOMDocument hasn't had an "id attribute" set, even if the id
 		// exists in the document. See:
 		// http://php.net/manual/en/domdocument.getelementbyid.php
+		// PHP 8.4 will also return null if a deleted node was shadowing
+		// a still-existing-in-the-tree node:
+		// https://github.com/php/php-src/issues/20281
 		if ( $r !== null ) {
 			// Verify that this node is actually connected to the
 			// document (or to the context), since the element
@@ -301,6 +304,11 @@ class ZestInst {
 			// is deleted. (Also PHP's call is not scoped.)
 			// (Note that scoped getElementsById is *exclusive* of $context,
 			// so we start this search at r's parent node.)
+			if ( $context === $doc && $this->isStandardsMode( $context, $opts, true ) ) {
+				// PHP 8.4 promptly removes disconnected nodes from the index,
+				// so we can skip the context walk if the context was top level
+				return [ $r ];
+			}
 			for ( $parent = $r->parentNode; $parent; $parent = $parent->parentNode ) {
 				if ( $parent === $context ) {
 					return [ $r ];
