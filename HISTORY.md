@@ -1,6 +1,8 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Add optional ZestJQ entrypoint providing an attribute operator which
+  operates on JSON-values attributes.
 
 ## zest-css 4.1.1 (2026-02-13)
 * Update wikimedia/remex-html ^5.1.0 || ^6.0.0 (dev dependency)

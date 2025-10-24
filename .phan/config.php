@@ -10,6 +10,7 @@ foreach ( [
 	'vendor/phpunit/phpunit',
 	'vendor/wikimedia/remex-html',
 	'vendor/wikimedia/testing-access-wrapper',
+	'vendor/wikimedia/zest-jq',
 ] as $dir ) {
 	$cfg['directory_list'][] = $dir;
 	$cfg['exclude_analysis_directory_list'][] = $dir;

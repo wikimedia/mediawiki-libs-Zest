@@ -24,7 +24,8 @@
 		"ext-xml": "*"
 	},
 	"suggest": {
-		"ext-intl": "*"
+		"ext-intl": "*",
+		"wikimedia/zest-jq": "For JQ support in attribute selectors"
 	},
 	"require-dev": {
 		"mediawiki/mediawiki-codesniffer": "51.0.0",
@@ -36,7 +37,8 @@
 		"phpunit/phpunit": "10.5.63",
 		"wikimedia/remex-html": "^5.1.0 || ^6.0.0",
 		"wikimedia/testing-access-wrapper": "^4.0.0",
-		"wikimedia/update-history": "^1.0.1"
+		"wikimedia/update-history": "^1.0.1",
+		"wikimedia/zest-jq": "^1.1.0"
 	},
 	"autoload": {
 		"psr-4": {
