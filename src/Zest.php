@@ -4,7 +4,7 @@ declare( strict_types = 1 );
 namespace Wikimedia\Zest;
 
 /**
- * Zest.php (https://github.com/wikimedia/zest.php)
+ * Zest.php (https://github.com/wikimedia/mediawiki-libs-Zest)
  * Copyright (c) 2019, C. Scott Ananian. (MIT licensed)
  * PHP port based on:
  *
