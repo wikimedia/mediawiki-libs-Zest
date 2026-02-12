@@ -499,8 +499,9 @@ class ZestInst {
 
 	/**
 	 * Handle `nth` Selectors
+	 * @return array{group:int,offset:int}
 	 */
-	private static function parseNth( string $param ): object {
+	private static function parseNth( string $param ): array {
 		$param = preg_replace( '/\s+/', '', $param );
 
 		if ( $param === 'even' ) {
@@ -515,7 +516,7 @@ class ZestInst {
 
 		$group = intval( ( $cap[1] ?? '' ) . ( $cap[2] ?? '1' ), 10 );
 		$offset = intval( ( $cap[3] ?? '' ) . ( $cap[4] ?? '0' ), 10 );
-		return (object)[
+		return [
 			'group' => $group,
 			'offset' => $offset,
 		];
@@ -528,9 +529,7 @@ class ZestInst {
 	 * @return callable(DOMNode,array):bool
 	 */
 	private static function nth( string $param, callable $test, bool $last ): callable {
-		$param = self::parseNth( $param );
-		$group = $param->group;
-		$offset = $param->offset;
+		[ 'group' => $group, 'offset' => $offset ] = self::parseNth( $param );
 		$find = ( !$last ) ? [ self::class, 'child' ] : [ self::class, 'lastChild' ];
 		$advance = ( !$last ) ? [ self::class, 'next' ] : [ self::class, 'prev' ];
 		return function ( $el, array $opts ) use ( $find, $test, $offset, $group, $advance ): bool {

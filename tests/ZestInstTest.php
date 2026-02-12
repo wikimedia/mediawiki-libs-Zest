@@ -88,8 +88,8 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testParseNth( $given, $group, $offset ) {
 		$res = TestingAccessWrapper::newFromClass( ZestInst::class )->parseNth( $given );
-		$this->assertSame( $group, $res->group );
-		$this->assertSame( $offset, $res->offset );
+		$this->assertSame( $group, $res['group'] );
+		$this->assertSame( $offset, $res['offset'] );
 	}
 
 	public static function parseNthProvider() {
