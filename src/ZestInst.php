@@ -582,7 +582,7 @@ class ZestInst {
 	 * Add a custom selector that takes 1 parameter, which is passed as a
 	 * string.
 	 * @param string $key Name of the selector
-	 * @param callable(string,ZestInst):(callable(DOMNode,array):bool)|callable(string):(callable(DOMNode,array):bool) $func
+	 * @param callable(string,ZestInst):(callable(DOMNode,array):bool) $func
 	 *   The selector match function
 	 */
 	public function addSelector1( string $key, callable $func ) {
