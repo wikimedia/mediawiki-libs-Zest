@@ -1,6 +1,6 @@
 # Release History
 
-## zest-css x.x.x (not yet released)
+## zest-css 4.1.1 (2026-02-13)
 * Update wikimedia/remex-html ^5.1.0 || ^6.0.0 (dev dependency)
 * Optimize ::getElementsById() on PHP 8.4
 * Use strict_types
