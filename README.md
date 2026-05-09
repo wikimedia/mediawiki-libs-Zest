@@ -10,7 +10,7 @@ selector library.  Since that project hasn't been updated in a while,
 bugfixes have been taken from the copy of zest included in the
 [domino](https://github.com/fgnass/domino/pulls) DOM library.
 
-Report issues on [Phabricator](https://phabricator.wikimedia.org/maniphest/task/edit/form/1/?projects=Parsoid&title=Zest:%20).
+Report issues on [Phabricator](https://phabricator.wikimedia.org/maniphest/task/edit/form/1/?projects=MediaWiki-libs-Zest).
 
 ## Usage
 
