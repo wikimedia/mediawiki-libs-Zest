@@ -158,6 +158,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		foreach ( self::docProvider() as $desc => [ $docFunc ] ) {
 			foreach ( $cases as $c ) {
 				array_unshift( $c, $docFunc );
+				// @phan-suppress-next-line PhanTypeConversionFromArray false positive
 				yield $c[1] . "($desc)" => $c;
 			}
 		}
@@ -257,6 +258,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			$el->setAttribute( 'id', 'samesame' );
 		}
 		$opts = $useCallable ? [
+			// @phan-suppress-next-line PhanUnusedClosureParameter
 			'getElementsById' => static function ( $context, $id ) use ( $els ) {
 				return $els;
 			},
@@ -312,6 +314,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 
 	public static function loadDomDocumentHtml( string $filename ) {
 		libxml_use_internal_errors( true );
+		// @phan-suppress-next-line PhanUndeclaredClassMethod (in PHP 8.3)
 		$doc = \Dom\HTMLDocument::createFromFile( $filename, LIBXML_NOERROR );
 		self::fixupMwSection( $doc );
 		libxml_clear_errors();
@@ -331,15 +334,22 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 			$mwSection->appendChild( $section->firstChild );
 		}
 		// Replace element with incorrect tagName w/ corrected element
+		// @phan-suppress-next-line PhanTypeMismatchArgumentNullableInternal
 		$section->parentNode->replaceChild( $mwSection, $section );
 	}
 
-	public static function loadRemexHtml( string $filename, $options = [] ) {
+	public static function loadRemexHtml( string $filename, array $options = [] ) {
 		$text = file_get_contents( $filename );
 		return self::parseHtml( $text, $options );
 	}
 
-	public static function parseHtml( string $text, $options = [] ) {
+	/**
+	 * This method could actually return \Dom\Document as well as \DOMDocument
+	 * but keep things simple for phan.
+	 *
+	 * @return \DOMDocument
+	 */
+	public static function parseHtml( string $text, array $options = [] ) {
 		$domBuilder = new DOM\DOMBuilder( $options + [
 			/* DOM builder options  */
 			// Element names with embedded colons don't work properly unless
@@ -356,6 +366,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 		$tokenizer->execute( [
 			/* execute options */
 		] );
+		// @phan-suppress-next-line PhanTypeMismatchReturnSuperType
 		return $domBuilder->getFragment();
 	}
 
@@ -379,6 +390,7 @@ class ZestTest extends \PHPUnit\Framework\TestCase {
 
 			$docFunc = fn ( $filename = null ) => self::loadRemexHtml( $filename ?? $defaultFilename, [
 				'suppressIdAttribute' => true,
+				// @phan-suppress-next-line PhanUndeclaredClassReference (in PHP 8.3)
 				'domImplementationClass' => \Dom\Implementation::class,
 			] );
 			yield 'Dom\\Document, Remex' => [ $docFunc ];

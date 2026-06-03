@@ -19,6 +19,7 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 	 */
 	public function testIsThereAnySyntaxError() {
 		$var = new ZestInst;
+		// @phan-suppress-next-line PhanRedundantCondition
 		$this->assertTrue( is_object( $var ) );
 	}
 
@@ -128,13 +129,13 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		// subsequently-created selector engines.
 		try {
 			$z0->find( ':zesttest', $doc );
-		} catch ( \Exception $e ) {
+		} catch ( \Exception ) {
 			$thrown++;
 		}
 		$z2 = new ZestInst;
 		try {
 			$z2->find( ':zesttest', $doc );
-		} catch ( \Exception $e ) {
+		} catch ( \Exception ) {
 			$thrown++;
 		}
 		$this->assertSame( 2, $thrown );
