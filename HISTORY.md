@@ -1,5 +1,7 @@
 # Release History
 
+## zest-css x.x.x (not yet released)
+
 ## zest-css 4.1.2 (2026-06-04)
 * Add optional ZestJQ entrypoint providing an attribute operator which
   operates on JSON-values attributes.
