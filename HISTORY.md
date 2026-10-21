@@ -1,6 +1,9 @@
 # Release History
 
 ## zest-css x.x.x (not yet released)
+* Allow 'scope' to be supplied via $opts in Zest::matches()
+* For consistency, allow 'scope' via $opts to override $context in
+  Zest::find().
 
 ## zest-css 4.1.2 (2026-06-04)
 * Add optional ZestJQ entrypoint providing an attribute operator which

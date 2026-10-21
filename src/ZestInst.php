@@ -1524,7 +1524,9 @@ class ZestInst {
 	 */
 	public function find( string $sel, $context, array $opts = [] ): array {
 		$opts['this'] = $this;
-		$opts['scope'] = $context;
+		// 'scope' as an option overrides the argument, for consistency with
+		// ::matches()
+		$opts['scope'] ??= $context;
 
 		/* when context isn't a DocumentFragment and the selector is simple: */
 		if ( $context->nodeType !== 11 && !str_contains( $sel, ' ' ) ) {
@@ -1566,7 +1568,9 @@ class ZestInst {
 	 */
 	public function matches( $el, string $sel, array $opts = [] ): bool {
 		$opts['this'] = $this;
-		$opts['scope'] = $el;
+		// Allow the caller to override scope, for example when implementing
+		// ::closest() when the ':scope' should be the original node.
+		$opts['scope'] ??= $el;
 
 		$test = new ZestFunc( static function ( $el, $opts ): bool {
 			return true;
