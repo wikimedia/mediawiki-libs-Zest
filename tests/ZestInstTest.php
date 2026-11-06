@@ -141,6 +141,26 @@ class ZestInstTest extends \PHPUnit\Framework\TestCase {
 		$this->assertSame( 2, $thrown );
 	}
 
+	/** @dataProvider docProvider */
+	public function testUnknownOperator( callable $docFunc ) {
+		$doc = $docFunc( __DIR__ . "/index.html" );
+		$z0 = new ZestInst;
+		foreach ( [ 'a[rel%=section]', 'a[rel/section]' ] as $sel ) {
+			try {
+				$z0->find( $sel, $doc );
+				$this->fail( "Expected an exception for $sel" );
+			} catch ( \InvalidArgumentException $e ) {
+				$this->assertStringContainsString( 'Unknown attribute operator', $e->getMessage() );
+			}
+		}
+		// `/` is accepted once a custom operator has been added for it
+		$z1 = new ZestInst;
+		$z1->addOperator( '/', static function ( string $attr, string $val ): bool {
+			return $attr === $val;
+		} );
+		$this->assertCount( 5, $z1->find( 'a[rel/section]', $doc ) );
+	}
+
 	public static function toXPath( $node ) {
 		return ZestTest::toXPath( $node );
 	}

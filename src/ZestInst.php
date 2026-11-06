@@ -904,6 +904,9 @@ class ZestInst {
 
 	/** @return callable(DOMNode,array):bool */
 	private function selectorsAttr( string $key, string $op, string $val, bool $i ): callable {
+		if ( !isset( $this->operators[ $op ] ) ) {
+			throw $this->newBadSelectorException( "Unknown attribute operator: $op" );
+		}
 		$op = $this->operators[ $op ];
 		return static function ( $el, $opts ) use ( $key, $i, $op, $val ): bool {
 			/* XXX: the below all assumes a more complete PHP DOM than we have

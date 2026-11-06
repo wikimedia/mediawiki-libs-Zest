@@ -2,6 +2,8 @@
 
 ## zest-css x.x.x (not yet released)
 * Empty attribute values never match the `^=`, `$=`, or `*=` operators.
+* Unknown attribute operators now throw an InvalidArgumentException (or
+  the subclass's bad-selector exception) when the selector is parsed.
 * Allow 'scope' to be supplied via $opts in Zest::matches()
 * For consistency, allow 'scope' via $opts to override $context in
   Zest::find().
