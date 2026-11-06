@@ -1,6 +1,6 @@
 # Release History
 
-## zest-css x.x.x (not yet released)
+## zest-css 4.1.3 (2026-11-06)
 * Empty attribute values never match the `^=`, `$=`, or `*=` operators.
 * Unknown attribute operators now throw an InvalidArgumentException (or
   the subclass's bad-selector exception) when the selector is parsed.
